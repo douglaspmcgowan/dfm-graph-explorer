@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atlas GUI Preview</title>
+  <style>
+    :root {
+      --bg: #0d0d0f;
+      --bg-soft: #15161a;
+      --panel: #17191e;
+      --stroke: #2a2d36;
+      --text: #eceff4;
+      --muted: #aab0bd;
+      --subject: #4fc3f7;
+      --task: #81c784;
+      --problem: #ffb74d;
+      --construct: #ce93d8;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #app {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-rows: 52px 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--stroke);
+      background: rgba(13, 13, 15, 0.96);
+      gap: 8px;
+    }
+
+    .controls-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+    .breadcrumb {
+      font-size: 12px;
+      color: #9aa0b8;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .search-wrap {
+      position: relative;
+      width: 260px;
+    }
+
+    #search-input {
+      width: 100%;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      background: #101116;
+      color: var(--text);
+      padding: 8px 10px;
+      outline: none;
+    }
+
+    #search-results {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #161821;
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      z-index: 40;
+    }
+
+    .search-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .search-item:last-child { border-bottom: none; }
+    .search-item:hover, .search-item.active { background: #202431; }
+
+    .type-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .type-filters {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .filter-pill {
+      border: 1px solid var(--stroke);
+      background: #11131a;
+      color: var(--text);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .filter-pill input { display: none; }
+    .filter-pill.off { opacity: 0.35; }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    #weight-slider { width: 140px; }
+    #temporal-toggle {
+      border: 1px solid var(--stroke);
+      background: #11131a;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    #temporal-toggle.active {
+      border-color: #4fc3f7;
+      box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.35) inset;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+
+    .main {
+      min-height: 0;
+      display: flex;
+      position: relative;
+    }
+
+    .graph-area {
+      flex: 1;
+      position: relative;
+      min-width: 0;
+      border-right: 1px solid var(--stroke);
+      transition: flex-basis 180ms ease, width 180ms ease;
+    }
+    .graph-area.level3 {
+      flex: 0 0 33%;
+    }
+
+    #chart {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: var(--bg);
+      cursor: grab;
+    }
+
+    #chart:active { cursor: grabbing; }
+
+    .temporal-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      right: 14px;
+      background: rgba(15, 16, 20, 0.95);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: none;
+      z-index: 20;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .temporal-bar.show { display: flex; }
+    #year-slider { flex: 1; }
+    #year-label { color: var(--text); font-weight: 600; }
+
+    .detail-panel {
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+      background: var(--panel);
+      border-left: 1px solid transparent;
+      transition: width 160ms ease, opacity 160ms ease;
+    }
+
+    .detail-panel.open {
+      width: 320px;
+      opacity: 1;
+      border-left-color: var(--stroke);
+    }
+    .detail-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .ghost-link {
+      color: #94a2bc;
+      background: none;
+      border: none;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .explore-btn {
+      border: 1px solid #35527a;
+      color: #d8e6ff;
+      background: #182335;
+      border-radius: 8px;
+      padding: 6px 9px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .detail-content {
+      width: 320px;
+      height: 100%;
+      padding: 14px;
+      overflow-y: auto;
+    }
+
+    .detail-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #0a0b0f;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+    }
+
+    .papers-count {
+      color: var(--muted);
+      margin: 0 0 16px;
+      font-size: 13px;
+    }
+
+    .node-description {
+      margin: -4px 0 14px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #c8ced9;
+      border-left: 2px solid #2f3340;
+      padding-left: 10px;
+    }
+
+    .section-title {
+      margin: 12px 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .empty-note {
+      border: 1px dashed #343947;
+      background: #10131a;
+      border-radius: 8px;
+      padding: 8px 9px;
+      color: #b6becc;
+      font-size: 12px;
+      line-height: 1.4;
+      margin-bottom: 8px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .list-item {
+      border: 1px solid var(--stroke);
+      background: #11131a;
+      border-radius: 8px;
+      padding: 8px 9px;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .list-item.clickable { cursor: pointer; }
+    .list-item.clickable:hover { border-color: #4b5161; }
+    .connection-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .connection-count {
+      color: #d6dbe6;
+      font-size: 12px;
+      white-space: nowrap;
+      text-decoration: underline dotted rgba(214, 219, 230, 0.35);
+      text-underline-offset: 2px;
+    }
+    .connection-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+      text-transform: none;
+      opacity: 0.9;
+    }
+    .edge-papers {
+      margin-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      padding-top: 8px;
+      display: none;
+      gap: 6px;
+      flex-direction: column;
+    }
+    .edge-papers.open { display: flex; }
+    .edge-paper-item {
+      background: #0f1016;
+      border: 1px solid #2a2d36;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+    .edge-paper-authors {
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .edge-paper-link a {
+      color: #8bc5ff;
+      text-decoration: none;
+    }
+    .edge-paper-link a:hover { text-decoration: underline; }
+    .paper-title-link {
+      color: #bcd8ff;
+      text-decoration: none;
+    }
+    .paper-title-link:hover { text-decoration: underline; }
+
+    .tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: rgba(22, 24, 31, 0.98);
+      border: 1px solid var(--stroke);
+      border-radius: 8px;
+      padding: 8px 9px;
+      color: var(--text);
+      font-size: 12px;
+      z-index: 60;
+      display: none;
+      min-width: 170px;
+    }
+
+    .tooltip .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+    .deep-dive {
+      display: none;
+      width: 0;
+      opacity: 0;
+      overflow: hidden;
+      border-left: 1px solid transparent;
+      background: #14161d;
+      transition: width 180ms ease, opacity 180ms ease;
+    }
+    .deep-dive.open {
+      display: block;
+      width: 67%;
+      opacity: 1;
+      border-left-color: var(--stroke);
+    }
+    .deep-inner {
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+    }
+    .deep-header h2 {
+      margin: 0 0 6px;
+      font-size: 30px;
+      line-height: 1.05;
+    }
+    .deep-meta {
+      color: #b0b8c7;
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .deep-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .deep-tab {
+      border: 1px solid var(--stroke);
+      background: #11131a;
+      color: #ced6e6;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .deep-tab.active {
+      border-color: #4d7bb8;
+      background: #1a2437;
+      color: #e8f1ff;
+    }
+    .deep-content {
+      overflow-y: auto;
+      min-height: 0;
+      padding-right: 4px;
+    }
+    .deep-card {
+      border: 1px solid var(--stroke);
+      background: #10131a;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .deep-card h3 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      color: #dbe4f8;
+    }
+    .deep-synth {
+      color: #cad2e2;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .deep-con-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 13px;
+    }
+    .deep-con-row:last-child { border-bottom: none; }
+    .deep-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .deep-controls input,
+    .deep-controls select {
+      border: 1px solid #303543;
+      background: #0f1219;
+      color: #d8deeb;
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+    .deep-controls input { min-width: 200px; }
+    .deep-connection-list {
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid var(--stroke);
+      border-radius: 10px;
+      background: #10131a;
+      padding: 6px 10px;
+      margin-bottom: 12px;
+    }
+    .deep-connection-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .deep-connection-item:last-child { border-bottom: none; }
+    .deep-connection-item:hover { background: rgba(255,255,255,0.03); }
+    .deep-connection-item.active { background: rgba(79,195,247,0.08); }
+    .deep-connection-meta {
+      color: #9aa6bf;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+    .deep-connection-detail {
+      border: 1px solid #3a4252;
+      border-radius: 10px;
+      background: #10131a;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .error {
+      color: #ff8a80;
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="topbar">
+      <div class="controls-left">
+        <div class="breadcrumb" id="breadcrumb">Design Engineering Atlas</div>
+        <div class="search-wrap">
+          <input id="search-input" type="text" placeholder="Search nodes..." />
+          <div id="search-results"></div>
+        </div>
+        <div class="type-filters" id="type-filters"></div>
+        <div class="slider-group">
+          <span id="weight-label">Min. 0 papers</span>
+          <input id="weight-slider" type="range" min="0" max="1" value="0" />
+        </div>
+        <button id="temporal-toggle" type="button">TEMPORAL MODE</button>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="main">
+      <div class="graph-area" id="graph-area">
+        <svg id="chart" aria-label="Atlas graph preview"></svg>
+        <div class="temporal-bar" id="temporal-bar">
+          <span>Year</span>
+          <input id="year-slider" type="range" min="1989" max="2025" value="2025" />
+          <span id="year-label">2025</span>
+        </div>
+      </div>
+      <section class="deep-dive" id="deep-dive">
+        <div class="deep-inner" id="deep-inner"></div>
+      </section>
+      <aside class="detail-panel" id="detail-panel">
+        <div class="detail-content" id="detail-content"></div>
+      </aside>
+    </div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="./graph_data.local.js"></script>
+  <script>
+    (async function init() {
+      const COLORS = {
+        subject: "#4fc3f7",
+        task: "#81c784",
+        problem: "#ffb74d",
+        construct: "#ce93d8"
+      };
+      const TYPE_LABELS = {
+        subject: "Subjects",
+        task: "Tasks",
+        problem: "Problems",
+        construct: "Constructs"
+      };
+
+      const svg = d3.select("#chart");
+      const container = document.getElementById("chart");
+      const graphArea = document.getElementById("graph-area");
+      const detailPanel = document.getElementById("detail-panel");
+      const detailContent = document.getElementById("detail-content");
+      const deepDive = document.getElementById("deep-dive");
+      const deepInner = document.getElementById("deep-inner");
+      const tooltip = document.getElementById("tooltip");
+      const searchInput = document.getElementById("search-input");
+      const searchResults = document.getElementById("search-results");
+      const breadcrumb = document.getElementById("breadcrumb");
+      const typeFilters = document.getElementById("type-filters");
+      const legendEl = document.getElementById("legend");
+      const weightSlider = document.getElementById("weight-slider");
+      const weightLabel = document.getElementById("weight-label");
+      const temporalToggle = document.getElementById("temporal-toggle");
+      const temporalBar = document.getElementById("temporal-bar");
+      const yearSlider = document.getElementById("year-slider");
+      const yearLabel = document.getElementById("year-label");
+
+      const dims = {
+        width: container.clientWidth || graphArea.clientWidth || window.innerWidth,
+        height: container.clientHeight || graphArea.clientHeight || window.innerHeight
+      };
+      svg.attr("viewBox", [0, 0, dims.width, dims.height]);
+
+      const root = svg.append("g");
+      const linksLayer = root.append("g");
+      const nodesLayer = root.append("g");
+
+      const zoom = d3.zoom()
+        .scaleExtent([0.2, 6])
+        .on("zoom", (event) => root.attr("transform", event.transform));
+      svg.call(zoom);
+
+      let data;
+      try {
+        if (window.location.protocol === "file:" && window.GRAPH_DATA) {
+          data = window.GRAPH_DATA;
+        } else if (window.location.protocol === "file:") {
+          data = await loadLocalJsonViaPicker();
+        } else {
+          const response = await fetch("./graph_data.json");
+          if (!response.ok) throw new Error("Failed to load graph_data.json");
+          data = await response.json();
+        }
+      } catch (error) {
+        document.getElementById("app").innerHTML = `<div class="error">${error.message}. Use http.server or graph_data.local.js fallback.</div>`;
+        console.error(error);
+        return;
+      }
+
+      async function loadLocalJsonViaPicker() {
+        return new Promise((resolve, reject) => {
+          const input = document.createElement("input");
+          input.type = "file";
+          input.accept = ".json,application/json";
+          input.style.display = "none";
+          document.body.appendChild(input);
+          input.addEventListener("change", async () => {
+            try {
+              const file = input.files && input.files[0];
+              if (!file) throw new Error("No file selected");
+              const text = await file.text();
+              const parsed = JSON.parse(text);
+              input.remove();
+              resolve(parsed);
+            } catch (err) {
+              input.remove();
+              reject(err);
+            }
+          });
+          input.click();
+        });
+      }
+
+      const nodes = data.nodes.map((d) => ({
+        ...d,
+        paper_count: Number(d.paper_count) || 0,
+        first_year: Number(d.first_year) || 9999
+      }));
+
+      const nodeById = new Map(nodes.map((n) => [String(n.id), n]));
+      const links = data.edges
+        .map((d, idx) => ({
+          _id: idx,
+          source: String(d.source),
+          target: String(d.target),
+          type: d.type,
+          baseWeight: Number(d.weight) || 0,
+          years: Array.isArray(d.years) ? d.years.map(Number).filter(Number.isFinite) : [],
+          papers: Array.isArray(d.papers) ? d.papers : [],
+        }))
+        .filter((l) => nodeById.has(l.source) && nodeById.has(l.target));
+
+      const typeCounts = d3.rollup(nodes, (v) => v.length, (d) => d.type);
+      Object.entries(TYPE_LABELS).forEach(([type, label]) => {
+        const item = document.createElement("div");
+        item.className = "legend-item";
+        item.innerHTML = `<span class="swatch" style="background:${COLORS[type]}"></span><span>${label} (${typeCounts.get(type) || 0})</span>`;
+        legendEl.appendChild(item);
+      });
+
+      const activeTypes = new Set(["subject", "task", "problem", "construct"]);
+      Object.entries(TYPE_LABELS).forEach(([type, label]) => {
+        const pill = document.createElement("label");
+        pill.className = "filter-pill";
+        pill.dataset.type = type;
+        pill.innerHTML = `<input type="checkbox" checked /><span class="type-dot" style="background:${COLORS[type]}"></span>${label[0]}`;
+        const input = pill.querySelector("input");
+        input.addEventListener("change", () => {
+          if (!input.checked && activeTypes.size === 1) {
+            input.checked = true;
+            return;
+          }
+          if (input.checked) activeTypes.add(type);
+          else activeTypes.delete(type);
+          pill.classList.toggle("off", !input.checked);
+          renderGraphState();
+          refreshSearchResults();
+        });
+        typeFilters.appendChild(pill);
+      });
+
+      const maxWeight = d3.max(links, (d) => d.baseWeight) || 1;
+      weightSlider.max = String(maxWeight);
+      weightSlider.value = "0";
+      let minWeight = 0;
+
+      let temporalMode = false;
+      const minYear = Number(data.meta?.year_range?.[0]) || 1989;
+      const maxYear = Number(data.meta?.year_range?.[1]) || 2025;
+      yearSlider.min = String(minYear);
+      yearSlider.max = String(maxYear);
+      yearSlider.value = String(maxYear);
+      let activeYear = maxYear;
+
+      const paperExtent = d3.extent(nodes, (d) => d.paper_count);
+      const nodeRadius = d3.scaleSqrt()
+        .domain(paperExtent[0] === paperExtent[1] ? [0, paperExtent[1] || 1] : paperExtent)
+        .range([4, 20]);
+      const widthScale = d3.scaleLinear().domain([0, maxWeight]).range([0.7, 5]);
+      const opacityScale = d3.scaleLinear().domain([0, maxWeight]).range([0.08, 0.7]);
+
+      const linkForce = d3.forceLink(links)
+        .id((d) => String(d.id))
+        .distance((d) => 120 - Math.min(90, d.baseWeight * 1.8));
+      const simulation = d3.forceSimulation(nodes)
+        .force("link", linkForce)
+        .force("charge", d3.forceManyBody().strength(-140))
+        .force("center", d3.forceCenter(dims.width / 2, dims.height / 2))
+        .force("collision", d3.forceCollide().radius((d) => nodeRadius(d.paper_count) + 2));
+
+      const linkSel = linksLayer.selectAll("line")
+        .data(links, (d) => d._id)
+        .join("line")
+        .attr("stroke", "#f0f2f5")
+        .attr("stroke-linecap", "round");
+
+      const nodeSel = nodesLayer.selectAll("circle")
+        .data(nodes, (d) => d.id)
+        .join("circle")
+        .attr("r", (d) => nodeRadius(d.paper_count))
+        .attr("fill", (d) => COLORS[d.type] || "#aaaaaa")
+        .attr("stroke", "#11131a")
+        .attr("stroke-width", 1.2)
+        .style("cursor", "pointer")
+        .on("mouseenter", (event, d) => showTooltip(event, d))
+        .on("mousemove", (event, d) => showTooltip(event, d))
+        .on("mouseleave", hideTooltip)
+        .on("click", (event, d) => {
+          event.stopPropagation();
+          selectNode(d);
+        })
+        .call(d3.drag().on("start", dragStarted).on("drag", dragged).on("end", dragEnded));
+
+      const adjacency = new Map();
+      const edgeEndpointId = (endpoint) => String(endpoint && endpoint.id !== undefined ? endpoint.id : endpoint);
+      function addAdj(a, b, link) {
+        if (!adjacency.has(a)) adjacency.set(a, []);
+        adjacency.get(a).push({ id: b, link });
+      }
+      links.forEach((l) => {
+        const sid = edgeEndpointId(l.source);
+        const tid = edgeEndpointId(l.target);
+        addAdj(sid, tid, l);
+        addAdj(tid, sid, l);
+      });
+
+      let selectedNode = null;
+      let expandedConnectionKey = null;
+      let activeResultIndex = -1;
+      let currentLevel = 1;
+      let deepDiveTab = "connections";
+      let deepSelectedConnectionKey = null;
+      let deepConnectionSearch = "";
+      let deepConnectionTypeFilter = "all";
+      let deepConnectionSort = "weight_desc";
+
+      svg.on("click", clearSelection);
+
+      simulation.on("tick", () => {
+        linkSel
+          .attr("x1", (d) => d.source.x)
+          .attr("y1", (d) => d.source.y)
+          .attr("x2", (d) => d.target.x)
+          .attr("y2", (d) => d.target.y);
+        nodeSel
+          .attr("cx", (d) => d.x)
+          .attr("cy", (d) => d.y);
+      });
+
+      function effectiveWeight(link) {
+        if (!temporalMode) return link.baseWeight;
+        const edgePapers = Array.isArray(link.papers) ? link.papers : [];
+        return edgePapers.filter((paper) => (Number(paper.year) || 0) <= activeYear).length;
+      }
+
+      function nodeVisible(node) {
+        return activeTypes.has(node.type) && (!temporalMode || node.first_year <= activeYear);
+      }
+
+      function linkVisible(link) {
+        const source = nodeById.get(String(link.source.id || link.source));
+        const target = nodeById.get(String(link.target.id || link.target));
+        if (!source || !target || !nodeVisible(source) || !nodeVisible(target)) return false;
+        const weight = effectiveWeight(link);
+        if (temporalMode && weight <= 0) return false;
+        return weight >= minWeight;
+      }
+
+      function renderGraphState() {
+        const baseVisibleNodeIds = new Set(nodes.filter(nodeVisible).map((n) => String(n.id)));
+        let visibleNodeIds = new Set(baseVisibleNodeIds);
+        let visibleLinks = new Set(links.filter(linkVisible).map((l) => l._id));
+
+        if (selectedNode && !baseVisibleNodeIds.has(String(selectedNode.id))) {
+          clearSelection();
+          return;
+        }
+
+        if (selectedNode) {
+          const sid = String(selectedNode.id);
+          const egoNodeIds = new Set([sid, ...(adjacency.get(sid) || []).map((n) => String(n.id))]);
+          visibleNodeIds = new Set([...egoNodeIds].filter((id) => baseVisibleNodeIds.has(id)));
+          visibleLinks = new Set(
+            links
+              .filter((l) => {
+                if (!linkVisible(l)) return false;
+                const sourceId = String(l.source.id || l.source);
+                const targetId = String(l.target.id || l.target);
+                return visibleNodeIds.has(sourceId) && visibleNodeIds.has(targetId);
+              })
+              .map((l) => l._id)
+          );
+        }
+
+        nodeSel
+          .style("pointer-events", (d) => visibleNodeIds.has(String(d.id)) ? "auto" : "none")
+          .attr("opacity", (d) => visibleNodeIds.has(String(d.id)) ? 1 : 0);
+
+        linkSel
+          .style("pointer-events", "none")
+          .attr("opacity", (d) => visibleLinks.has(d._id) ? opacityScale(effectiveWeight(d)) : 0)
+          .attr("stroke-width", (d) => Math.max(0, widthScale(effectiveWeight(d))));
+
+        if (selectedNode) {
+          applySelectionStyling();
+          if (currentLevel === 2) {
+            fillDetails(selectedNode);
+          } else if (currentLevel === 3) {
+            renderDeepDive(selectedNode);
+          }
+        }
+      }
+
+      function applySelectionStyling() {
+        if (!selectedNode) return;
+        const sid = String(selectedNode.id);
+
+        nodeSel
+          .attr("stroke", (d) => String(d.id) === sid ? "#ffffff" : "#11131a")
+          .attr("stroke-width", (d) => String(d.id) === sid ? 2.4 : 1.2)
+          .style("filter", (d) => String(d.id) === sid ? "drop-shadow(0 0 8px rgba(255,255,255,0.65))" : null);
+
+        linkSel
+          .attr("stroke", (l) => {
+            const sourceId = String(l.source.id || l.source);
+            const targetId = String(l.target.id || l.target);
+            return sourceId === sid || targetId === sid ? "#ffffff" : "#f0f2f5";
+          });
+      }
+
+      function showTooltip(event, d) {
+        tooltip.style.display = "block";
+        tooltip.innerHTML = `
+          <div class="top">
+            <strong>${escapeHtml(d.label)}</strong>
+            <span class="badge" style="background:${COLORS[d.type]};margin:0;">${escapeHtml(d.type)}</span>
+          </div>
+          <div>${d.paper_count} papers</div>
+        `;
+        tooltip.style.left = `${event.clientX + 12}px`;
+        tooltip.style.top = `${event.clientY + 12}px`;
+      }
+
+      function hideTooltip() {
+        tooltip.style.display = "none";
+      }
+
+      function fillDetails(node) {
+        expandedConnectionKey = null;
+        const sid = String(node.id);
+        const visibleConnections = (adjacency.get(sid) || [])
+          .map((item) => {
+            const neighbor = nodeById.get(String(item.id));
+            if (!neighbor || !nodeVisible(neighbor) || !linkVisible(item.link)) return null;
+            const currentWeight = effectiveWeight(item.link);
+            if (temporalMode && currentWeight <= 0) return null;
+            return {
+              neighbor,
+              weight: currentWeight,
+              edgeType: item.link.type,
+              link: item.link,
+            };
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.weight - a.weight);
+
+        const papers = (node.papers || [])
+          .slice()
+          .filter((p) => !temporalMode || (Number(p.year) || 0) <= activeYear)
+          .sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+        const description = (node.description || "").trim();
+        const descriptionBlock = description
+          ? `<p class="node-description">${escapeHtml(description)}</p>`
+          : "";
+
+        detailContent.innerHTML = `
+          <div class="detail-actions">
+            <button type="button" class="ghost-link" id="back-to-field">← Back to field</button>
+            <button type="button" class="explore-btn" id="explore-node">Explore →</button>
+          </div>
+          <h2 class="detail-title">${escapeHtml(node.label)}</h2>
+          <div class="badge" style="background:${COLORS[node.type]};">${escapeHtml(node.type)}</div>
+          <p class="papers-count">Appears in ${node.paper_count} papers</p>
+          ${descriptionBlock}
+          <div class="section-title">Connections (${visibleConnections.length})</div>
+          <div class="list" id="connections-list"></div>
+          <div class="section-title">Papers (${papers.length})</div>
+          <div class="list" id="papers-list"></div>
+        `;
+        detailContent.querySelector("#back-to-field")?.addEventListener("click", clearSelection);
+        detailContent.querySelector("#explore-node")?.addEventListener("click", () => {
+          setLevel(3);
+          renderDeepDive(node);
+        });
+
+        const connectionsList = detailContent.querySelector("#connections-list");
+        visibleConnections.forEach((c) => {
+          const connectionKey = `${node.id}::${c.neighbor.id}`;
+          const item = document.createElement("div");
+          item.className = "list-item clickable";
+          item.innerHTML = `
+            <div class="connection-main">
+              <span><span class="type-dot" style="background:${COLORS[c.neighbor.type]}"></span><strong>${escapeHtml(c.neighbor.label)}</strong></span>
+              <span class="connection-count" title="${c.weight} papers in the corpus reference both of these nodes">${c.weight} papers co-occur</span>
+            </div>
+            <div class="connection-meta">${escapeHtml(c.edgeType)}</div>
+            <div class="edge-papers" data-connection-key="${escapeHtml(connectionKey)}"></div>
+          `;
+          item.addEventListener("click", () => {
+            const panel = item.querySelector(".edge-papers");
+            if (!panel) return;
+            const isCurrentlyOpen = expandedConnectionKey === connectionKey;
+
+            const allPanels = detailContent.querySelectorAll(".edge-papers");
+            allPanels.forEach((p) => {
+              p.classList.remove("open");
+              p.innerHTML = "";
+            });
+
+            if (isCurrentlyOpen) {
+              expandedConnectionKey = null;
+              return;
+            }
+
+            expandedConnectionKey = connectionKey;
+            const evidencePapers = (Array.isArray(c.link.papers) ? c.link.papers : [])
+              .filter((paper) => !temporalMode || (Number(paper.year) || 0) <= activeYear);
+            if (!evidencePapers.length) {
+              panel.innerHTML = `<div class="edge-paper-item">No papers evidencing this connection in the current view.</div>`;
+            } else {
+              panel.innerHTML = `<div class="section-title" style="margin:0 0 6px;">Papers evidencing this connection</div>`;
+              evidencePapers.forEach((paper) => {
+                const row = document.createElement("div");
+                row.className = "edge-paper-item";
+                const link = paper.doi || paper.url;
+                const title = (paper.title || "").trim() || "[title unavailable]";
+                row.innerHTML = `
+                  <div><strong>${escapeHtml(String(paper.year || "Unknown"))}</strong> - ${escapeHtml(title)}</div>
+                  <div class="edge-paper-authors">${escapeHtml(paper.authors || "Unknown")}</div>
+                  ${link ? `<div class="edge-paper-link"><a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link)}</a></div>` : ""}
+                `;
+                panel.appendChild(row);
+              });
+            }
+            panel.classList.add("open");
+          });
+          connectionsList.appendChild(item);
+        });
+
+        const papersList = detailContent.querySelector("#papers-list");
+        if (!papers.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty-note";
+          empty.textContent = temporalMode
+            ? `This node does not appear in any papers by ${activeYear}.`
+            : "No papers available for this node.";
+          papersList.appendChild(empty);
+        }
+        papers.forEach((p) => {
+          const item = document.createElement("div");
+          item.className = "list-item";
+          const title = (p.title || "").trim() || "[title unavailable]";
+          const authors = (p.authors || "").trim();
+          const year = p.year || "Unknown";
+          const doi = (p.doi || "").trim();
+          const titleHtml = doi
+            ? `<a class="paper-title-link" href="${escapeHtml(doi.startsWith("http") ? doi : `https://doi.org/${doi}`)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>`
+            : escapeHtml(title);
+
+          item.innerHTML = `
+            <div><strong>${escapeHtml(String(year))}</strong> - ${titleHtml}</div>
+            ${authors ? `<div class="edge-paper-authors">${escapeHtml(authors)}</div>` : ""}
+          `;
+          papersList.appendChild(item);
+        });
+      }
+
+      function selectNode(node, keepSearchOpen) {
+        selectedNode = node;
+        setLevel(2);
+        breadcrumb.textContent = `Design Engineering Atlas / ${node.label}`;
+        console.log("Node clicked:", {
+          label: node.label,
+          paper_count: node.paper_count,
+          connections: (adjacency.get(String(node.id)) || []).map((n) => {
+            const neighbor = nodeById.get(String(n.id));
+            return {
+              neighbor_label: neighbor ? neighbor.label : n.id,
+              edge_weight: effectiveWeight(n.link)
+            };
+          }).sort((a, b) => b.edge_weight - a.edge_weight)
+        });
+        detailPanel.classList.add("open");
+        fillDetails(node);
+        renderGraphState();
+        applySelectionStyling();
+        centerOnEgoNetwork(node);
+        if (!keepSearchOpen) {
+          searchResults.style.display = "none";
+          activeResultIndex = -1;
+        }
+      }
+
+      function clearSelection() {
+        selectedNode = null;
+        expandedConnectionKey = null;
+        deepDiveTab = "connections";
+        deepSelectedConnectionKey = null;
+        deepConnectionSearch = "";
+        deepConnectionTypeFilter = "all";
+        deepConnectionSort = "weight_desc";
+        setLevel(1);
+        breadcrumb.textContent = "Design Engineering Atlas";
+        detailPanel.classList.remove("open");
+        detailContent.innerHTML = "";
+        deepInner.innerHTML = "";
+        nodeSel.attr("stroke", "#11131a").attr("stroke-width", 1.2).style("filter", null);
+        linkSel.attr("stroke", "#f0f2f5");
+        renderGraphState();
+        svg.transition().duration(360).call(zoom.transform, d3.zoomIdentity);
+      }
+
+      function setLevel(level) {
+        currentLevel = level;
+        if (level === 3) {
+          detailPanel.classList.remove("open");
+          deepDive.classList.add("open");
+          graphArea.classList.add("level3");
+        } else if (level === 2) {
+          deepDive.classList.remove("open");
+          graphArea.classList.remove("level3");
+          detailPanel.classList.add("open");
+        } else {
+          deepDive.classList.remove("open");
+          graphArea.classList.remove("level3");
+          detailPanel.classList.remove("open");
+        }
+      }
+
+      function getVisibleConnectionsForNode(node) {
+        const sid = String(node.id);
+        return (adjacency.get(sid) || [])
+          .map((item) => {
+            const neighbor = nodeById.get(String(item.id));
+            if (!neighbor || !nodeVisible(neighbor) || !linkVisible(item.link)) return null;
+            const weight = effectiveWeight(item.link);
+            if (temporalMode && weight <= 0) return null;
+            return { neighbor, edgeType: item.link.type, weight, link: item.link };
+          })
+          .filter(Boolean)
+          .sort((a, b) => b.weight - a.weight);
+      }
+
+      function renderDeepDive(node) {
+        if (!node) return;
+        const connections = getVisibleConnectionsForNode(node);
+        const papers = (node.papers || [])
+          .slice()
+          .sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+        const normalizedQuery = deepConnectionSearch.trim().toLowerCase();
+        let filteredConnections = connections.filter((c) => {
+          if (deepConnectionTypeFilter !== "all" && c.neighbor.type !== deepConnectionTypeFilter) return false;
+          if (!normalizedQuery) return true;
+          return c.neighbor.label.toLowerCase().includes(normalizedQuery) || c.edgeType.toLowerCase().includes(normalizedQuery);
+        });
+
+        filteredConnections.sort((a, b) => {
+          if (deepConnectionSort === "alpha_asc") return a.neighbor.label.localeCompare(b.neighbor.label);
+          if (deepConnectionSort === "alpha_desc") return b.neighbor.label.localeCompare(a.neighbor.label);
+          if (deepConnectionSort === "weight_asc") return a.weight - b.weight;
+          return b.weight - a.weight;
+        });
+
+        if (deepSelectedConnectionKey && !filteredConnections.some((c) => `${node.id}::${c.neighbor.id}` === deepSelectedConnectionKey)) {
+          deepSelectedConnectionKey = null;
+        }
+        const selectedConnection = filteredConnections.find((c) => `${node.id}::${c.neighbor.id}` === deepSelectedConnectionKey) || null;
+
+        const tabButtons = `
+          <div class="deep-tabs">
+            <button class="deep-tab ${deepDiveTab === "connections" ? "active" : ""}" data-tab="connections">Connections</button>
+            <button class="deep-tab ${deepDiveTab === "papers" ? "active" : ""}" data-tab="papers">All Papers</button>
+            <button class="deep-tab" data-tab="back">← Back to node panel</button>
+          </div>
+        `;
+
+        let tabBody = "";
+        if (deepDiveTab === "connections") {
+          tabBody = `
+            <div class="deep-controls">
+              <input id="deep-connection-search" type="text" placeholder="Search connections..." value="${escapeHtml(deepConnectionSearch)}" />
+              <select id="deep-connection-type-filter">
+                <option value="all" ${deepConnectionTypeFilter === "all" ? "selected" : ""}>All types</option>
+                <option value="subject" ${deepConnectionTypeFilter === "subject" ? "selected" : ""}>Subjects</option>
+                <option value="task" ${deepConnectionTypeFilter === "task" ? "selected" : ""}>Tasks</option>
+                <option value="problem" ${deepConnectionTypeFilter === "problem" ? "selected" : ""}>Problems</option>
+                <option value="construct" ${deepConnectionTypeFilter === "construct" ? "selected" : ""}>Constructs</option>
+              </select>
+              <select id="deep-connection-sort">
+                <option value="weight_desc" ${deepConnectionSort === "weight_desc" ? "selected" : ""}>Most co-occurrence</option>
+                <option value="weight_asc" ${deepConnectionSort === "weight_asc" ? "selected" : ""}>Least co-occurrence</option>
+                <option value="alpha_asc" ${deepConnectionSort === "alpha_asc" ? "selected" : ""}>A-Z</option>
+                <option value="alpha_desc" ${deepConnectionSort === "alpha_desc" ? "selected" : ""}>Z-A</option>
+              </select>
+            </div>
+            <div class="deep-connection-list" id="deep-connection-list">
+              ${filteredConnections.length ? filteredConnections.map((c) => {
+                const key = `${node.id}::${c.neighbor.id}`;
+                const active = deepSelectedConnectionKey === key ? "active" : "";
+                return `
+                  <div class="deep-connection-item ${active}" data-connection-key="${escapeHtml(key)}">
+                    <span>
+                      <span class="type-dot" style="background:${COLORS[c.neighbor.type]}"></span>
+                      ${escapeHtml(c.neighbor.label)}
+                      <div class="deep-connection-meta">${escapeHtml(c.edgeType)} · ${escapeHtml(c.neighbor.type)}</div>
+                    </span>
+                    <strong>${c.weight} papers</strong>
+                  </div>
+                `;
+              }).join("") : `<p class="deep-synth" style="margin:0;">No matching connections.</p>`}
+            </div>
+            <div id="deep-connection-detail">
+              ${selectedConnection ? renderDeepConnectionDetail(node, selectedConnection) : `<div class="deep-card"><h3>Connection detail</h3><p class="deep-synth">Select a connection above to inspect evidence papers.</p></div>`}
+            </div>
+          `;
+        } else {
+          tabBody = `
+            <div class="deep-card">
+              <h3>All Papers (${papers.length})</h3>
+              ${papers.map((p) => {
+                const title = (p.title || "").trim() || "[title unavailable]";
+                const authors = (p.authors || "").trim();
+                const year = p.year || "Unknown";
+                const doi = (p.doi || "").trim();
+                const href = doi ? (doi.startsWith("http") ? doi : `https://doi.org/${doi}`) : "";
+                return `
+                  <div class="deep-con-row">
+                    <span><strong>${escapeHtml(String(year))}</strong> - ${href ? `<a class="paper-title-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(title)}</a>` : escapeHtml(title)}<br/><span style="color:#95a0b6">${escapeHtml(authors || "Unknown")}</span></span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          `;
+        }
+
+        deepInner.innerHTML = `
+          <div class="deep-header">
+            <h2>${escapeHtml(node.label)}</h2>
+            <div class="badge" style="background:${COLORS[node.type]}; margin:0 0 8px;">${escapeHtml(node.type)}</div>
+            <div class="deep-meta">First appeared: ${escapeHtml(String(node.first_year || "Unknown"))} · Appears in ${node.paper_count} papers</div>
+            <div class="deep-card" style="margin-bottom:12px;">
+              <h3>About this ${escapeHtml(node.type)}</h3>
+              <p class="deep-synth">${escapeHtml((node.description || "").trim() || "No synthesis description available for this node.")}</p>
+            </div>
+          </div>
+          ${tabButtons}
+          <div class="deep-content">${tabBody}</div>
+        `;
+
+        deepInner.querySelectorAll(".deep-tab").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const tab = btn.getAttribute("data-tab");
+            if (tab === "back") {
+              setLevel(2);
+              fillDetails(node);
+              return;
+            }
+            deepDiveTab = tab;
+            renderDeepDive(node);
+          });
+        });
+
+        const searchEl = deepInner.querySelector("#deep-connection-search");
+        if (searchEl) {
+          searchEl.addEventListener("input", (event) => {
+            deepConnectionSearch = event.target.value || "";
+            renderDeepDive(node);
+          });
+        }
+        const typeEl = deepInner.querySelector("#deep-connection-type-filter");
+        if (typeEl) {
+          typeEl.addEventListener("change", (event) => {
+            deepConnectionTypeFilter = event.target.value || "all";
+            renderDeepDive(node);
+          });
+        }
+        const sortEl = deepInner.querySelector("#deep-connection-sort");
+        if (sortEl) {
+          sortEl.addEventListener("change", (event) => {
+            deepConnectionSort = event.target.value || "weight_desc";
+            renderDeepDive(node);
+          });
+        }
+        deepInner.querySelectorAll(".deep-connection-item").forEach((row) => {
+          row.addEventListener("click", () => {
+            deepSelectedConnectionKey = row.getAttribute("data-connection-key");
+            renderDeepDive(node);
+          });
+        });
+      }
+
+      function renderDeepConnectionDetail(node, connection) {
+        const edgePapers = (Array.isArray(connection.link.papers) ? connection.link.papers : [])
+          .filter((paper) => !temporalMode || (Number(paper.year) || 0) <= activeYear)
+          .sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0));
+        const title = `${node.label} ↔ ${connection.neighbor.label}`;
+        return `
+          <div class="deep-connection-detail">
+            <h3 style="margin:0 0 6px;">${escapeHtml(title)}</h3>
+            <div class="deep-meta" style="margin-bottom:8px;">${connection.weight} co-occurring papers · ${escapeHtml(connection.edgeType)}</div>
+            <div class="section-title" style="margin:0 0 8px;">Papers evidencing this connection (${edgePapers.length})</div>
+            ${edgePapers.length ? edgePapers.map((paper) => {
+              const t = (paper.title || "").trim() || "[title unavailable]";
+              const a = (paper.authors || "").trim() || "Unknown";
+              const y = paper.year || "Unknown";
+              const doi = (paper.doi || "").trim();
+              const href = doi ? (doi.startsWith("http") ? doi : `https://doi.org/${doi}`) : "";
+              return `
+                <div class="edge-paper-item">
+                  <div><strong>${escapeHtml(String(y))}</strong> - ${href ? `<a class="paper-title-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t)}</a>` : escapeHtml(t)}</div>
+                  <div class="edge-paper-authors">${escapeHtml(a)}</div>
+                </div>
+              `;
+            }).join("") : `<div class="empty-note">No papers for this connection in the current view.</div>`}
+          </div>
+        `;
+      }
+
+      function fuzzyMatch(label, query) {
+        const q = query.toLowerCase().trim();
+        if (!q) return true;
+        const l = label.toLowerCase();
+        if (l.includes(q)) return true;
+        let i = 0;
+        for (const ch of l) {
+          if (ch === q[i]) i += 1;
+          if (i === q.length) return true;
+        }
+        return false;
+      }
+
+      function matchingNodes(query) {
+        if (!query.trim()) return [];
+        return nodes
+          .filter((n) => nodeVisible(n) && fuzzyMatch(n.label, query))
+          .sort((a, b) => a.label.localeCompare(b.label))
+          .slice(0, 8);
+      }
+
+      function refreshSearchResults() {
+        const matches = matchingNodes(searchInput.value);
+        searchResults.innerHTML = "";
+        if (!matches.length) {
+          searchResults.style.display = "none";
+          return matches;
+        }
+        matches.forEach((m, idx) => {
+          const item = document.createElement("div");
+          item.className = "search-item";
+          item.innerHTML = `
+            <span><span class="type-dot" style="background:${COLORS[m.type]}"></span>${escapeHtml(m.label)}</span>
+            <span style="color:var(--muted);text-transform:capitalize">${escapeHtml(m.type)}</span>
+          `;
+          item.addEventListener("click", () => {
+            centerOnNode(m);
+            selectNode(m);
+          });
+          if (idx === activeResultIndex) item.classList.add("active");
+          searchResults.appendChild(item);
+        });
+        searchResults.style.display = "block";
+        return matches;
+      }
+
+      function centerOnNode(node) {
+        const scale = 1.2;
+        const tx = dims.width / 2 - (node.x || 0) * scale;
+        const ty = dims.height / 2 - (node.y || 0) * scale;
+        svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      }
+
+      function centerOnEgoNetwork(node) {
+        const sid = String(node.id);
+        const egoIds = new Set([sid, ...(adjacency.get(sid) || []).map((n) => String(n.id))]);
+        const egoNodes = nodes.filter((n) => egoIds.has(String(n.id)) && nodeVisible(n));
+        if (!egoNodes.length) return;
+
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        egoNodes.forEach((n) => {
+          const x = Number.isFinite(n.x) ? n.x : dims.width / 2;
+          const y = Number.isFinite(n.y) ? n.y : dims.height / 2;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x);
+          maxY = Math.max(maxY, y);
+        });
+
+        const pad = 60;
+        const spanX = Math.max(1, maxX - minX);
+        const spanY = Math.max(1, maxY - minY);
+        const scale = Math.max(0.65, Math.min(3, Math.min((dims.width - pad * 2) / spanX, (dims.height - pad * 2) / spanY)));
+        const cx = (minX + maxX) / 2;
+        const cy = (minY + maxY) / 2;
+        const tx = dims.width / 2 - cx * scale;
+        const ty = dims.height / 2 - cy * scale;
+        svg.transition().duration(420).call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      }
+
+      searchInput.addEventListener("input", () => {
+        activeResultIndex = -1;
+        refreshSearchResults();
+      });
+
+      searchInput.addEventListener("keydown", (event) => {
+        const matches = matchingNodes(searchInput.value);
+        if (!matches.length) return;
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          activeResultIndex = Math.min(matches.length - 1, activeResultIndex + 1);
+          refreshSearchResults();
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          activeResultIndex = Math.max(0, activeResultIndex - 1);
+          refreshSearchResults();
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          const chosen = matches[Math.max(0, activeResultIndex)];
+          centerOnNode(chosen);
+          selectNode(chosen);
+        } else if (event.key === "Escape") {
+          searchResults.style.display = "none";
+          activeResultIndex = -1;
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!searchResults.contains(event.target) && event.target !== searchInput) {
+          searchResults.style.display = "none";
+        }
+      });
+
+      weightSlider.addEventListener("input", () => {
+        minWeight = Number(weightSlider.value) || 0;
+        weightLabel.textContent = `Min. ${minWeight} papers`;
+        renderGraphState();
+      });
+
+      temporalToggle.addEventListener("click", () => {
+        temporalMode = !temporalMode;
+        temporalToggle.classList.toggle("active", temporalMode);
+        temporalBar.classList.toggle("show", temporalMode);
+        renderGraphState();
+        refreshSearchResults();
+      });
+
+      yearSlider.addEventListener("input", () => {
+        activeYear = Number(yearSlider.value) || maxYear;
+        yearLabel.textContent = String(activeYear);
+        renderGraphState();
+        if (selectedNode) fillDetails(selectedNode);
+      });
+
+      function dragStarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+      }
+
+      function dragEnded(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll("\"", "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      window.addEventListener("resize", () => {
+        dims.width = container.clientWidth || graphArea.clientWidth || window.innerWidth;
+        dims.height = container.clientHeight || graphArea.clientHeight || window.innerHeight;
+        svg.attr("viewBox", [0, 0, dims.width, dims.height]);
+        simulation.force("center", d3.forceCenter(dims.width / 2, dims.height / 2));
+        simulation.alpha(0.25).restart();
+      });
+
+      renderGraphState();
+    })();
+  </script>
+</body>
+</html>

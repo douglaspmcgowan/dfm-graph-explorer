@@ -1,0 +1,11 @@
+# Vercel CLI state (project linked via GitHub instead)
+.vercel
+
+# Raw 8 MB source data — processed output lives in data/
+graph_data.json
+
+# Claude Code project files
+.claude/
+
+# Backup files
+*.bak

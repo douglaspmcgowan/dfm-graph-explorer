@@ -1,0 +1,2941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DFM Graph Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #131316;
+      --surface-2: #1c1c20;
+      --surface-3: #26262b;
+      --border: rgba(255,255,255,0.07);
+      --border-strong: rgba(255,255,255,0.12);
+      --fg: #ececee;
+      --fg-muted: #a0a0a8;
+      --fg-faint: #6b6b72;
+
+      --accent: #ff6b3d;
+      --accent-soft: rgba(255,107,61,0.15);
+
+      --type-risk: #f87171;
+      --type-heuristic: #60a5fa;
+      --type-principle: #a78bfa;
+      --type-case: #fbbf24;
+      --type-workaround: #34d399;
+      --type-observation: #94a3b8;
+      --type-comparison: #f472b6;
+      --type-other: #c084fc;
+
+      --site-engineering: #4fc3f7;
+      --site-electronics: #81c784;
+      --site-robotics: #ffb74d;
+      --site-mechanics: #f48fb1;
+      --site-woodworking: #a1887f;
+
+      --radius-sm: 4px;
+      --radius: 6px;
+      --radius-lg: 10px;
+
+      --font-sans: "Geist", "Inter Tight", "Inter", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, Menlo, monospace;
+      --font-serif: "Source Serif 4", Charter, Georgia, serif;
+
+      --ease-fast: 120ms;
+      --ease-slow: 240ms;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      font-family: var(--font-sans);
+      font-optical-sizing: auto;
+      background: var(--bg);
+      color: var(--fg);
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      overflow: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+
+    p {
+      text-wrap: pretty;
+    }
+
+    h1,
+    h2,
+    h3 {
+      text-wrap: balance;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.035;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      z-index: 0;
+    }
+
+    #app {
+      position: relative;
+      z-index: 1;
+      min-height: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chrome {
+      position: relative;
+      z-index: 5;
+      background: rgba(10, 10, 11, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 0 14px;
+    }
+
+    .topbar-left,
+    .topbar-right {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .topbar-left {
+      flex: 1 1 auto;
+      overflow: hidden;
+    }
+
+    .topbar-right {
+      flex: 0 0 auto;
+      justify-content: flex-end;
+      gap: 16px;
+    }
+
+    .subbar {
+      min-height: 42px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      background: rgba(19, 19, 22, 0.9);
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .controls-group.controls-right {
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .breadcrumb {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .crumb {
+      min-width: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .crumb.current {
+      color: var(--fg);
+      cursor: default;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .crumb:hover:not(.current) {
+      color: var(--fg);
+    }
+
+    .crumb-sep {
+      color: var(--fg-faint);
+      user-select: none;
+    }
+
+    .search-wrap {
+      position: relative;
+      width: min(440px, 48vw);
+      min-width: 220px;
+      flex: 0 1 440px;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 34px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--fg);
+      padding: 0 12px;
+      outline: none;
+      transition: border-color var(--ease-fast) ease, background var(--ease-fast) ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--fg-faint);
+    }
+
+    .search-input:hover {
+      border-color: rgba(255,255,255,0.18);
+    }
+
+    .search-input:focus {
+      border-color: rgba(255,107,61,0.45);
+      background: var(--surface-2);
+    }
+
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      max-height: 420px;
+      overflow: auto;
+      background: rgba(19,19,22,0.98);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      box-shadow: none;
+      display: none;
+      z-index: 20;
+    }
+
+    .search-results.visible {
+      display: block;
+    }
+
+    .search-result {
+      width: 100%;
+      text-align: left;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: inherit;
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 8px 12px;
+      cursor: pointer;
+      transition: background var(--ease-fast) ease;
+    }
+
+    .search-result:last-child {
+      border-bottom: 0;
+    }
+
+    .search-result:hover {
+      background: var(--surface-2);
+    }
+
+    .result-kind {
+      align-self: start;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1;
+      color: var(--fg-faint);
+      padding-top: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .result-main {
+      min-width: 0;
+    }
+
+    .result-label {
+      font-size: 13px;
+      color: var(--fg);
+      line-height: 1.35;
+      margin-bottom: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .result-meta {
+      font-size: 11px;
+      color: var(--fg-muted);
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--font-mono);
+    }
+
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--fg-faint);
+      font-size: 11px;
+      max-width: 560px;
+      justify-content: flex-end;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .swatch {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .temporal-inline {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .toggle-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--fg-muted);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .toggle-wrap input {
+      accent-color: var(--accent);
+    }
+
+    .year-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--fg-muted);
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .year-control input[type="range"],
+    .inline-range input[type="range"] {
+      width: 140px;
+      accent-color: var(--accent);
+    }
+
+    .inline-range,
+    .inline-select {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg-muted);
+      white-space: nowrap;
+    }
+
+    .inline-select select {
+      height: 30px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      padding: 0 10px;
+      color: var(--fg);
+    }
+
+    .subtle-note {
+      color: var(--fg-faint);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .pill-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .pill-row-label {
+      color: var(--fg-faint);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-right: 2px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 28px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--fg-muted);
+      padding: 0 10px;
+      cursor: pointer;
+      transition: background var(--ease-fast) ease, border-color var(--ease-fast) ease, color var(--ease-fast) ease, opacity var(--ease-slow) ease;
+      font-size: 12px;
+    }
+
+    .pill:hover {
+      background: var(--surface-2);
+      color: var(--fg);
+    }
+
+    .pill.is-active {
+      color: var(--fg);
+      border-color: rgba(255,255,255,0.18);
+      background: var(--surface-2);
+    }
+
+    .pill.is-off {
+      color: var(--fg-faint);
+      background: transparent;
+      opacity: 0.55;
+    }
+
+    .pill .dot,
+    .meta-dot,
+    .type-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      flex: 0 0 auto;
+    }
+
+    .content {
+      flex: 1 1 auto;
+      min-height: 0;
+      position: relative;
+    }
+
+    .layout {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      background: transparent;
+    }
+
+    .layout-overview {
+      grid-template-columns: minmax(0, 1fr) 320px;
+    }
+
+    .layout-topic {
+      grid-template-columns: minmax(0, 1fr) 360px;
+    }
+
+    .layout-frame {
+      grid-template-columns: minmax(280px, 1fr) minmax(520px, 2fr);
+    }
+
+    .graph-pane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      border-right: 1px solid var(--border);
+      background: rgba(10,10,11,0.65);
+    }
+
+    .graph-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--surface);
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .panel-inner,
+    .reading-inner {
+      padding: 18px 18px 24px;
+    }
+
+    .panel-section,
+    .reading-section {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .panel-kicker {
+      color: var(--fg-faint);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .panel-title {
+      font-size: 24px;
+      line-height: 1.08;
+      margin-bottom: 10px;
+    }
+
+    .panel-subtitle {
+      color: var(--fg-muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .panel-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+    }
+
+    .stat-label {
+      color: var(--fg-faint);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-value {
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .overview-list,
+    .distribution-list,
+    .connected-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .overview-item,
+    .distribution-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--fg-muted);
+      font-size: 13px;
+    }
+
+    .overview-item .value,
+    .distribution-item .value {
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .distribution-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--surface-3);
+      border: 1px solid var(--border);
+      display: flex;
+      margin-bottom: 12px;
+    }
+
+    .distribution-bar > span {
+      height: 100%;
+      display: block;
+    }
+
+    .keyword-list,
+    .chip-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--fg-muted);
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 26px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      padding: 4px 8px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .topic-topframes {
+      display: grid;
+      gap: 8px;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    .frame-list-item {
+      width: 100%;
+      text-align: left;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+      color: inherit;
+      cursor: pointer;
+      transition: background var(--ease-fast) ease, border-color var(--ease-fast) ease;
+    }
+
+    .frame-list-item:hover {
+      background: var(--surface-3);
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    .frame-list-label {
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 6px;
+    }
+
+    .frame-list-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .reading-panel {
+      overflow: auto;
+      background: var(--surface);
+    }
+
+    .reading-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ghost-button {
+      height: 30px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      color: var(--fg-muted);
+      padding: 0 10px;
+      cursor: pointer;
+      transition: background var(--ease-fast) ease, border-color var(--ease-fast) ease, color var(--ease-fast) ease;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+
+    .ghost-button:hover {
+      background: var(--surface-2);
+      color: var(--fg);
+      border-color: rgba(255,255,255,0.16);
+    }
+
+    .frame-title {
+      font-size: clamp(26px, 2vw, 36px);
+      line-height: 1.06;
+      margin-top: 10px;
+      margin-bottom: 14px;
+    }
+
+    .thread-title {
+      color: var(--fg-faint);
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 18px;
+    }
+
+    .source-quote {
+      margin: 0;
+      padding: 0 0 0 12px;
+      border-left: 2px solid var(--accent);
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 20px;
+      line-height: 1.6;
+      color: #e5ddd7;
+      text-wrap: pretty;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .meta-link {
+      color: var(--fg);
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.22);
+      text-underline-offset: 2px;
+    }
+
+    .meta-link:hover {
+      text-decoration-color: var(--accent);
+    }
+
+    .prose {
+      color: var(--fg);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .connected-group {
+      margin-top: 14px;
+    }
+
+    .connected-group-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: var(--fg);
+      font-size: 14px;
+    }
+
+    .group-count {
+      color: var(--fg-faint);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .connected-card {
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      cursor: pointer;
+      transition: background var(--ease-fast) ease, border-color var(--ease-fast) ease;
+    }
+
+    .connected-card:hover {
+      background: var(--surface-3);
+      border-color: rgba(255,255,255,0.14);
+    }
+
+    .connected-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .connected-card-label {
+      color: var(--fg);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .connected-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--fg-muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .why-button {
+      border: 1px solid var(--border-strong);
+      background: transparent;
+      color: var(--fg-muted);
+      height: 26px;
+      border-radius: var(--radius);
+      padding: 0 8px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      flex: 0 0 auto;
+      transition: background var(--ease-fast) ease, border-color var(--ease-fast) ease, color var(--ease-fast) ease;
+    }
+
+    .why-button:hover {
+      background: var(--surface);
+      color: var(--fg);
+    }
+
+    .reasoning {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      color: var(--fg-muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .reasoning.visible {
+      display: block;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 30;
+      max-width: min(360px, calc(100vw - 24px));
+      padding: 10px 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-strong);
+      background: rgba(19,19,22,0.98);
+      color: var(--fg);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity var(--ease-fast) ease, transform var(--ease-slow) ease;
+      box-shadow: none;
+    }
+
+    .tooltip.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip-title {
+      font-size: 13px;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+
+    .tooltip-row,
+    .tooltip-list-item {
+      color: var(--fg-muted);
+      font-size: 11px;
+      line-height: 1.5;
+      font-family: var(--font-mono);
+    }
+
+    .tooltip-list {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .empty-state,
+    .loading-state,
+    .error-card {
+      position: absolute;
+      inset: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: left;
+      pointer-events: none;
+    }
+
+    .empty-state-inner,
+    .loading-card,
+    .error-card-inner {
+      max-width: 520px;
+      background: rgba(19,19,22,0.92);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      pointer-events: auto;
+    }
+
+    .empty-title,
+    .error-title {
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .empty-copy,
+    .error-copy,
+    .loading-copy {
+      color: var(--fg-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .error-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10,10,11,0.92);
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .error-overlay.visible {
+      display: flex;
+    }
+
+    .error-command {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-strong);
+      background: var(--surface-2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--fg);
+    }
+
+    .graph-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .graph-link {
+      stroke-linecap: round;
+    }
+
+    .graph-node {
+      cursor: pointer;
+    }
+
+    .graph-node circle {
+      transition: stroke var(--ease-fast) ease, stroke-width var(--ease-fast) ease, opacity var(--ease-slow) ease;
+    }
+
+    .graph-node:hover circle {
+      stroke: rgba(255,255,255,0.4);
+      stroke-width: 1.5px;
+    }
+
+    .graph-node.is-muted {
+      opacity: 0.45;
+    }
+
+    .graph-node.is-selected circle.core {
+      stroke: var(--accent);
+      stroke-width: 2px;
+    }
+
+    .graph-node .selection-ring {
+      fill: none;
+      stroke: rgba(255,107,61,0.22);
+      stroke-width: 6px;
+      pointer-events: none;
+    }
+
+    .graph-label {
+      fill: rgba(236,236,238,0.88);
+      font-size: 11px;
+      pointer-events: none;
+      text-anchor: middle;
+      paint-order: stroke;
+      stroke: rgba(10,10,11,0.78);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+      letter-spacing: -0.01em;
+    }
+
+    .graph-caption {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      color: var(--fg-faint);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      background: rgba(19,19,22,0.86);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 8px;
+      pointer-events: none;
+    }
+
+    .reading-grid-note {
+      color: var(--fg-faint);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    .confidence-tag,
+    .site-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    .site-tag {
+      color: var(--fg-muted);
+    }
+
+    .count-inline {
+      color: var(--fg);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    svg [tabindex]:focus-visible circle.core {
+      stroke: var(--accent);
+      stroke-width: 2px;
+    }
+
+    @media (max-width: 1200px) {
+      .layout-overview {
+        grid-template-columns: minmax(0, 1fr) 290px;
+      }
+
+      .layout-frame {
+        grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.6fr);
+      }
+
+      .legend {
+        max-width: 420px;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        height: auto;
+        min-height: 52px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        align-items: flex-start;
+      }
+
+      .topbar,
+      .subbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .topbar-right,
+      .controls-group.controls-right {
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+
+      .search-wrap {
+        width: 100%;
+        flex-basis: auto;
+      }
+
+      .layout-overview,
+      .layout-topic,
+      .layout-frame {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(320px, 48vh) auto;
+      }
+
+      .graph-pane {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        scroll-behavior: auto !important;
+      }
+
+      .tooltip,
+      .pill,
+      .ghost-button,
+      .frame-list-item,
+      .connected-card,
+      .search-result,
+      .graph-node circle {
+        transition: none !important;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div id="app">
+    <header class="chrome">
+      <div class="topbar">
+        <div class="topbar-left">
+          <nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb"></nav>
+          <div class="search-wrap">
+            <input
+              id="searchInput"
+              class="search-input"
+              type="search"
+              placeholder="Search frames, topics, authors..."
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Search frames, topics, and authors"
+            >
+            <div id="searchResults" class="search-results" role="listbox" aria-label="Search results"></div>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="legend" class="legend" aria-label="Frame type legend"></div>
+
+          <div class="temporal-inline">
+            <label class="toggle-wrap" aria-label="Temporal mode toggle">
+              <input id="temporalToggle" type="checkbox">
+              <span>TEMPORAL MODE</span>
+            </label>
+            <div id="yearControl" class="year-control" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subbar">
+        <div id="levelControlsLeft" class="controls-group"></div>
+        <div id="levelControlsRight" class="controls-group controls-right"></div>
+      </div>
+    </header>
+
+    <main id="content" class="content" aria-live="polite">
+      <div class="loading-state">
+        <div class="loading-card">
+          <h2 class="empty-title">Loading graph data</h2>
+          <p class="loading-copy">Fetching <span class="mono">./graph_data.json</span> and preparing graph indices.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="tooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <div id="errorState" class="error-overlay" aria-live="assertive">
+    <div class="error-card-inner">
+      <h2 class="error-title">Could not load graph data</h2>
+      <p id="errorMessage" class="error-copy"></p>
+    </div>
+  </div>
+
+  <script type="module">
+    // 1. Module-level constants: color maps, frame-type order, se-site order.
+    const FRAME_TYPE_ORDER = [
+      "risk",
+      "heuristic",
+      "principle",
+      "case",
+      "workaround",
+      "observation",
+      "comparison",
+      "other"
+    ];
+
+    const FRAME_TYPE_COLORS = {
+      risk: "#f87171",
+      heuristic: "#60a5fa",
+      principle: "#a78bfa",
+      case: "#fbbf24",
+      workaround: "#34d399",
+      observation: "#94a3b8",
+      comparison: "#f472b6",
+      other: "#c084fc"
+    };
+
+    const FRAME_TYPE_LABELS = {
+      risk: "risk",
+      heuristic: "heuristic",
+      principle: "principle",
+      case: "case",
+      workaround: "workaround",
+      observation: "observation",
+      comparison: "comparison",
+      other: "other"
+    };
+
+    const SE_SITE_ORDER = [
+      "engineering",
+      "electronics",
+      "robotics",
+      "mechanics",
+      "woodworking"
+    ];
+
+    const SE_SITE_COLORS = {
+      engineering: "#4fc3f7",
+      electronics: "#81c784",
+      robotics: "#ffb74d",
+      mechanics: "#f48fb1",
+      woodworking: "#a1887f"
+    };
+
+    const EDGE_LABEL_ORDER = [
+      "SPECIFIES",
+      "MITIGATES",
+      "CAUSAL_LINK",
+      "CONTRADICTS"
+    ];
+
+    const EDGE_LABEL_COLORS = {
+      SPECIFIES: "#94a3b8",
+      MITIGATES: "#34d399",
+      CAUSAL_LINK: "#ff6b3d",
+      CONTRADICTS: "#f87171"
+    };
+
+    const CONFIDENCE_COLORS = {
+      high: "#34d399",
+      medium: "#fbbf24",
+      low: "#f87171"
+    };
+
+    const CREDIBILITY_COLORS = {
+      high: "#34d399",
+      medium: "#fbbf24",
+      low: "#f87171"
+    };
+
+    const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const els = {
+      breadcrumb: document.getElementById("breadcrumb"),
+      legend: document.getElementById("legend"),
+      temporalToggle: document.getElementById("temporalToggle"),
+      yearControl: document.getElementById("yearControl"),
+      levelControlsLeft: document.getElementById("levelControlsLeft"),
+      levelControlsRight: document.getElementById("levelControlsRight"),
+      content: document.getElementById("content"),
+      tooltip: document.getElementById("tooltip"),
+      searchInput: document.getElementById("searchInput"),
+      searchResults: document.getElementById("searchResults"),
+      errorState: document.getElementById("errorState"),
+      errorMessage: document.getElementById("errorMessage")
+    };
+
+    // 2. loadData() -> parsed graph_data.
+    async function loadData() {
+      try {
+        const response = await fetch("./graph_data.json", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} while requesting ./graph_data.json`);
+        }
+        return await response.json();
+      } catch (error) {
+        if (window.location.protocol === "file:") {
+          throw new Error(
+            [
+              "This app cannot load ./graph_data.json from file:// in most browsers.",
+              "Serve this directory over HTTP, then open the local URL instead.",
+              "",
+              "Example:",
+              "python -m http.server 8000",
+              "",
+              "Then visit:",
+              "http://localhost:8000/"
+            ].join("\n")
+          );
+        }
+        throw new Error(
+          [
+            "Request for ./graph_data.json failed.",
+            error?.message || "Unknown fetch error.",
+            "",
+            "Confirm that graph_data.json is in the same directory as index.html and that you are serving this folder over HTTP."
+          ].join("\n")
+        );
+      }
+    }
+
+    // 3. buildIndices(data) -> { frameById, topicById, framesByTopic, semanticEdgesByFrame, adjacencyByTopic }.
+    function buildIndices(data) {
+      const frameById = new Map();
+      const topicById = new Map();
+      const framesByTopic = new Map();
+      const semanticEdgesByFrame = new Map();
+      const adjacencyMap = new Map();
+
+      for (const topic of data.topics || []) {
+        topicById.set(topic.topic_id, topic);
+        if (!framesByTopic.has(topic.topic_id)) {
+          framesByTopic.set(topic.topic_id, []);
+        }
+      }
+
+      for (const frame of data.frames || []) {
+        frameById.set(frame.id, frame);
+        if (!framesByTopic.has(frame.topic_id)) {
+          framesByTopic.set(frame.topic_id, []);
+        }
+        framesByTopic.get(frame.topic_id).push(frame);
+      }
+
+      for (const [topicId, frames] of framesByTopic.entries()) {
+        frames.sort((a, b) => {
+          const scoreDiff = (b.post_score ?? 0) - (a.post_score ?? 0);
+          if (scoreDiff !== 0) return scoreDiff;
+          return String(a.label || "").localeCompare(String(b.label || ""));
+        });
+      }
+
+      for (const edge of data.semantic_edges || []) {
+        if (!semanticEdgesByFrame.has(edge.source)) semanticEdgesByFrame.set(edge.source, []);
+        if (!semanticEdgesByFrame.has(edge.target)) semanticEdgesByFrame.set(edge.target, []);
+        semanticEdgesByFrame.get(edge.source).push(edge);
+        semanticEdgesByFrame.get(edge.target).push(edge);
+
+        const sourceFrame = frameById.get(edge.source);
+        const targetFrame = frameById.get(edge.target);
+        if (!sourceFrame || !targetFrame) continue;
+
+        const sourceTopic = sourceFrame.topic_id;
+        const targetTopic = targetFrame.topic_id;
+
+        if (
+          sourceTopic == null ||
+          targetTopic == null ||
+          sourceTopic === -1 ||
+          targetTopic === -1 ||
+          sourceTopic === targetTopic
+        ) {
+          continue;
+        }
+
+        const [a, b] = sourceTopic < targetTopic
+          ? [sourceTopic, targetTopic]
+          : [targetTopic, sourceTopic];
+
+        const key = `${a}|${b}`;
+        const existing = adjacencyMap.get(key) || { source: a, target: b, weight: 0 };
+        existing.weight += 1;
+        adjacencyMap.set(key, existing);
+      }
+
+      return {
+        frameById,
+        topicById,
+        framesByTopic,
+        semanticEdgesByFrame,
+        adjacencyByTopic: Array.from(adjacencyMap.values())
+      };
+    }
+
+    // 4. state object
+    const state = {
+      level: 1,
+      selectedTopicId: null,
+      selectedFrameId: null,
+      activeFrameTypes: new Set(FRAME_TYPE_ORDER),
+      activeSeSites: new Set(SE_SITE_ORDER),
+      credibilityMin: "all",
+      minTopicEdgeWeight: 2,
+      temporalMode: false,
+      activeYear: 2026,
+      history: [],
+      searchIndex: [],
+      nodePositions: new Map(),
+      simulation: null,
+      entryAnchor: null
+    };
+
+    let data = null;
+    let idx = null;
+
+    bindStaticUI();
+
+    try {
+      data = await loadData();
+      idx = buildIndices(data);
+      state.activeYear = data?.meta?.year_range?.[1] ?? 2026;
+      state.searchIndex = buildSearchIndex(data);
+      renderLegend();
+      render();
+    } catch (error) {
+      showLoadError(error.message || String(error));
+    }
+
+    window.addEventListener("resize", debounce(() => {
+      if (!data || !idx) return;
+      render();
+    }, 160));
+
+    // 5. render() - top-level router that picks renderLevel1/2/3 based on state.
+    function render() {
+      if (!data || !idx) return;
+
+      if (state.simulation) {
+        state.simulation.stop();
+        state.simulation = null;
+      }
+
+      hideTooltip();
+      renderChrome();
+
+      if (state.level === 1) {
+        renderLevel1(data, idx, state);
+      } else if (state.level === 2 && state.selectedTopicId != null) {
+        renderLevel2(state.selectedTopicId, data, idx, state);
+      } else if (state.level === 3 && state.selectedFrameId != null) {
+        renderLevel3(state.selectedFrameId, data, idx, state);
+      } else {
+        state.level = 1;
+        state.selectedTopicId = null;
+        state.selectedFrameId = null;
+        renderLevel1(data, idx, state);
+      }
+    }
+
+    // 6. renderLevel1(data, idx, state) - draws 39 topic supernodes with aggregated edges.
+    function renderLevel1(data, idx, state) {
+      document.title = "DFM Graph Explorer";
+
+      const topicStats = computeTopicStats(data, state);
+      const topicEdges = computeTopicAdjacency(data, idx, state);
+      const visibleEdges = topicEdges.filter(edge => edge.weight >= state.minTopicEdgeWeight);
+
+      const counts = data.topics.map(topic => {
+        const stat = topicStats.get(topic.topic_id);
+        return state.temporalMode ? (stat?.count ?? 0) : (topic.n_frames ?? 0);
+      });
+
+      const minCount = Math.min(...counts, 1);
+      const maxCount = Math.max(...counts, 1);
+      const radiusScale = d3.scaleSqrt()
+        .domain(minCount === maxCount ? [0, Math.max(maxCount, 1)] : [minCount, maxCount])
+        .range([10, 44]);
+
+      const nodes = data.topics.map(topic => {
+        const stat = topicStats.get(topic.topic_id);
+        const count = state.temporalMode ? (stat?.count ?? 0) : (topic.n_frames ?? 0);
+        const dist = state.temporalMode ? (stat?.dist ?? {}) : (topic.frame_type_distribution || {});
+        const dominantType = dominantFrameType(dist, topic.frame_type_distribution || {});
+        return {
+          id: topic.topic_id,
+          label: topic.label,
+          count,
+          topic,
+          dist,
+          dominantType,
+          r: radiusScale(Math.max(count, minCount || 1)),
+          muted: state.temporalMode && count === 0
+        };
+      });
+
+      els.content.innerHTML = `
+        <section class="layout layout-overview">
+          <div class="graph-pane">
+            <div id="graphStage" class="graph-stage"></div>
+            <div class="graph-caption">Drag nodes · scroll to zoom · click a topic to inspect frames</div>
+          </div>
+          <aside class="panel">
+            <div class="panel-inner">
+              <div class="panel-kicker">Topic overview</div>
+              <h1 class="panel-title">Engineering discussion field map</h1>
+              <p class="panel-subtitle">
+                ${escapeHtml(data.topics.length)} topic supernodes derived from semantic links between extracted frames. 
+                Edge width reflects the number of cross-topic semantic relations.
+              </p>
+
+              <div class="panel-stats">
+                <div class="stat-card">
+                  <div class="stat-label">Topics</div>
+                  <div class="stat-value">${formatNumber(data.meta?.counts?.topics ?? data.topics.length)}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Frames</div>
+                  <div class="stat-value">${formatNumber(data.meta?.counts?.frames ?? data.frames.length)}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Semantic edges</div>
+                  <div class="stat-value">${formatNumber(data.meta?.counts?.semantic_edges ?? data.semantic_edges.length)}</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Years</div>
+                  <div class="stat-value">${escapeHtml((data.meta?.year_range || []).join("–"))}</div>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <div class="panel-kicker">Visible graph</div>
+                <div class="overview-list">
+                  <div class="overview-item">
+                    <span>Rendered topic nodes</span>
+                    <span class="value">${formatNumber(nodes.length)}</span>
+                  </div>
+                  <div class="overview-item">
+                    <span>Topic edges at threshold</span>
+                    <span class="value">${formatNumber(visibleEdges.length)}</span>
+                  </div>
+                  <div class="overview-item">
+                    <span>Min shared semantic edges</span>
+                    <span class="value">${formatNumber(state.minTopicEdgeWeight)}</span>
+                  </div>
+                  <div class="overview-item">
+                    <span>Temporal filter</span>
+                    <span class="value">${state.temporalMode ? `≤ ${formatNumber(state.activeYear)}` : "Off"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <div class="panel-kicker">Instructions</div>
+                <p class="panel-subtitle">
+                  Hover for topic summaries. Click a topic to move into frame-level orientation. Search can jump directly to a topic or an individual frame.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </section>
+      `;
+
+      const graphStage = document.getElementById("graphStage");
+
+      drawForceGraph({
+        container: graphStage,
+        nodes,
+        links: visibleEdges.map(edge => ({ ...edge })),
+        ariaLabel: "Force-directed topic overview graph",
+        keyPrefix: "topic",
+        selectedId: null,
+        chargeStrength: -600,
+        linkDistance: edge => {
+          const maxW = Math.max(...visibleEdges.map(d => d.weight), 2);
+          const scale = d3.scaleLinear().domain([state.minTopicEdgeWeight, maxW]).range([200, 120]).clamp(true);
+          return scale(edge.weight);
+        },
+        collidePadding: 6,
+        linkWidth: edge => clamp(0.8 + Math.sqrt(edge.weight) * 0.7, 0.8, 5),
+        linkColor: edge => `rgba(255,255,255,${clamp(0.08 + edge.weight * 0.02, 0.08, 0.26)})`,
+        nodeStroke: node => node.muted ? "rgba(255,255,255,0.10)" : "rgba(255,255,255,0.18)",
+        onNodeClick: node => openTopic(node.id, { x: node.x, y: node.y }),
+        onNodeHover: node => {
+          const topTypes = topDistributionEntries(node.dist, 3);
+          return `
+            <div class="tooltip-title">${escapeHtml(node.label)}</div>
+            <div class="tooltip-row">frames: ${formatNumber(node.count)}</div>
+            <div class="tooltip-list">
+              ${topTypes.map(item => `
+                <div class="tooltip-list-item">
+                  ${escapeHtml(item.label)}: ${formatNumber(item.value)}
+                </div>
+              `).join("")}
+            </div>
+          `;
+        },
+        labelAccessor: node => truncate(node.label, node.count > 160 ? 20 : 16),
+        labelFilter: node => node.count > 70 || node.r > 18
+      });
+
+      if (!nodes.length) {
+        renderEmptyGraph(graphStage, "No topics available", "No topic nodes were found in the loaded dataset.");
+      }
+    }
+
+    // 7. renderLevel2(topicId, data, idx, state) - draws frames within topic + side panel.
+    function renderLevel2(topicId, data, idx, state) {
+      const topic = idx.topicById.get(topicId);
+      if (!topic) {
+        state.level = 1;
+        state.selectedTopicId = null;
+        render();
+        return;
+      }
+
+      document.title = `${topic.label} — DFM Graph Explorer`;
+
+      const allTopicFrames = idx.framesByTopic.get(topicId) || [];
+      const filteredFrames = allTopicFrames.filter(frame => passesFrameFilters(frame, state));
+      const filteredSet = new Set(filteredFrames.map(frame => frame.id));
+
+      const topicEdges = data.semantic_edges.filter(edge =>
+        filteredSet.has(edge.source) && filteredSet.has(edge.target)
+      );
+
+      const degree = new Map();
+      for (const edge of topicEdges) {
+        degree.set(edge.source, (degree.get(edge.source) || 0) + 1);
+        degree.set(edge.target, (degree.get(edge.target) || 0) + 1);
+      }
+
+      const nodes = filteredFrames.map(frame => ({
+        id: frame.id,
+        frame,
+        label: frame.label,
+        r: clamp(5 + (degree.get(frame.id) || 0) * 0.45, 5, 9)
+      }));
+
+      const visibleCount = filteredFrames.length;
+      const allCount = allTopicFrames.length;
+      const distribution = computeFrameTypeDistribution(filteredFrames);
+      const topFrames = resolveTopFrames(topic, filteredFrames, idx, 5);
+
+      els.content.innerHTML = `
+        <section class="layout layout-topic">
+          <div class="graph-pane">
+            <div id="graphStage" class="graph-stage"></div>
+            <div class="graph-caption">${formatNumber(visibleCount)} visible frames · ${formatNumber(topicEdges.length)} in-topic semantic edges</div>
+          </div>
+          <aside class="panel">
+            <div class="panel-inner">
+              <div class="panel-kicker">Topic</div>
+              <h1 class="panel-title">${escapeHtml(topic.label)}</h1>
+              <p class="panel-subtitle">
+                ${formatNumber(visibleCount)} of ${formatNumber(allCount)} frames currently visible under the active filters.
+              </p>
+
+              <div class="panel-section">
+                <div class="panel-kicker">Frame-type distribution</div>
+                ${renderDistributionBarHtml(distribution, visibleCount)}
+                <div class="distribution-list">
+                  ${FRAME_TYPE_ORDER
+                    .filter(type => (distribution[type] || 0) > 0)
+                    .map(type => `
+                      <div class="distribution-item">
+                        <span style="display:inline-flex;align-items:center;gap:8px;">
+                          <span class="dot" style="background:${FRAME_TYPE_COLORS[type]}"></span>
+                          ${escapeHtml(type)}
+                        </span>
+                        <span class="value">${formatNumber(distribution[type] || 0)}</span>
+                      </div>
+                    `).join("") || `<div class="panel-subtitle">No visible frames under the current filters.</div>`}
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <div class="panel-kicker">Keywords</div>
+                <div class="keyword-list">
+                  ${(topic.keywords || []).map(keyword => `<span class="chip">${escapeHtml(keyword)}</span>`).join("") || `<span class="panel-subtitle">No keywords available.</span>`}
+                </div>
+              </div>
+
+              <div class="panel-section">
+                <div class="panel-kicker">Top frames</div>
+                <div class="topic-topframes">
+                  ${topFrames.map(frame => `
+                    <button class="frame-list-item js-open-frame" data-frame-id="${escapeHtml(frame.id)}" aria-label="Open frame ${escapeHtml(frame.label)}">
+                      <div class="frame-list-label">${escapeHtml(frame.label)}</div>
+                      <div class="frame-list-meta">
+                        <span class="dot" style="background:${FRAME_TYPE_COLORS[frame.frame_type] || FRAME_TYPE_COLORS.other}"></span>
+                        <span>${escapeHtml(frame.frame_type || "other")}</span>
+                        <span>·</span>
+                        <span>${escapeHtml(frame.se_site || "unknown")}</span>
+                        <span>·</span>
+                        <span>${escapeHtml(frame.author_username || "unknown")}</span>
+                      </div>
+                    </button>
+                  `).join("") || `<div class="panel-subtitle">No frame candidates available.</div>`}
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      `;
+
+      for (const button of els.content.querySelectorAll(".js-open-frame")) {
+        button.addEventListener("click", () => {
+          const frameId = button.getAttribute("data-frame-id");
+          if (frameId) openFrame(frameId);
+        });
+      }
+
+      const graphStage = document.getElementById("graphStage");
+
+      drawForceGraph({
+        container: graphStage,
+        nodes,
+        links: topicEdges.map(edge => ({ ...edge })),
+        ariaLabel: `Frames within topic ${topic.label}`,
+        keyPrefix: "frame",
+        selectedId: null,
+        chargeStrength: -180,
+        linkDistance: () => 42,
+        collidePadding: 3,
+        linkWidth: edge => confidenceWidth(edge.confidence, 0.7, 1.8),
+        linkColor: edge => edgeStrokeColor(edge.label, edge.confidence, 0.18),
+        nodeStroke: () => "rgba(255,255,255,0.14)",
+        defaultAnchor: state.entryAnchor,
+        onNodeClick: node => openFrame(node.id, { x: node.x, y: node.y }),
+        onNodeHover: node => {
+          const frame = node.frame;
+          return `
+            <div class="tooltip-title">${escapeHtml(frame.label || "Untitled frame")}</div>
+            <div class="tooltip-row">
+              <span class="tag" style="background:${hexToRgba(FRAME_TYPE_COLORS[frame.frame_type] || FRAME_TYPE_COLORS.other, 0.14)}; border-color:${hexToRgba(FRAME_TYPE_COLORS[frame.frame_type] || FRAME_TYPE_COLORS.other, 0.28)}; color:${FRAME_TYPE_COLORS[frame.frame_type] || FRAME_TYPE_COLORS.other};">
+                ${escapeHtml(frame.frame_type || "other")}
+              </span>
+            </div>
+            <div class="tooltip-list">
+              <div class="tooltip-list-item">${escapeHtml(frame.se_site || "unknown site")}</div>
+              <div class="tooltip-list-item">
+                ${escapeHtml(frame.author_username || "unknown")} 
+                <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${CREDIBILITY_COLORS[frame.credibility_tier] || CREDIBILITY_COLORS.low};margin:0 4px 0 6px;vertical-align:middle;"></span>
+                ${escapeHtml(frame.credibility_tier || "low")}
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      if (!nodes.length) {
+        renderEmptyGraph(
+          graphStage,
+          "No frames match the active filters",
+          "Adjust frame type, site, credibility, or temporal controls to restore frames in this topic."
+        );
+      }
+
+      state.entryAnchor = null;
+    }
+
+    // 8. renderLevel3(frameId, data, idx, state) - ego network + reading view.
+    function renderLevel3(frameId, data, idx, state) {
+      const frame = idx.frameById.get(frameId);
+      if (!frame) {
+        state.level = 1;
+        state.selectedTopicId = null;
+        state.selectedFrameId = null;
+        render();
+        return;
+      }
+
+      state.selectedTopicId = frame.topic_id;
+      document.title = `${frame.label} — DFM Graph Explorer`;
+
+      const allAttachedEdges = (idx.semanticEdgesByFrame.get(frameId) || []).filter(edge => {
+        const otherId = edge.source === frameId ? edge.target : edge.source;
+        const otherFrame = idx.frameById.get(otherId);
+        if (!otherFrame) return false;
+        if (state.temporalMode && !passesTemporal(otherFrame, state) && otherId !== frameId) return false;
+        if (!passesLevelFiltersExceptSelected(otherFrame, state, frameId)) return false;
+        return true;
+      });
+
+      const neighborIds = Array.from(new Set(allAttachedEdges.map(edge => edge.source === frameId ? edge.target : edge.source)));
+      const egoSet = new Set([frameId, ...neighborIds]);
+
+      const egoNodes = [
+        {
+          id: frame.id,
+          frame,
+          label: frame.label,
+          r: 11
+        },
+        ...neighborIds.map(id => {
+          const neighbor = idx.frameById.get(id);
+          return {
+            id: neighbor.id,
+            frame: neighbor,
+            label: neighbor.label,
+            r: 7
+          };
+        })
+      ];
+
+      const egoLinks = data.semantic_edges
+        .filter(edge => egoSet.has(edge.source) && egoSet.has(edge.target))
+        .filter(edge => {
+          const sourceFrame = idx.frameById.get(edge.source);
+          const targetFrame = idx.frameById.get(edge.target);
+          if (!sourceFrame || !targetFrame) return false;
+          if (state.temporalMode && (!passesTemporal(sourceFrame, state) || !passesTemporal(targetFrame, state))) {
+            if (edge.source !== frameId && edge.target !== frameId) return false;
+          }
+          return true;
+        });
+
+      const groupedEdges = groupConnectedEdges(frameId, allAttachedEdges, idx);
+      const relatedTopic = idx.topicById.get(frame.topic_id);
+
+      els.content.innerHTML = `
+        <section class="layout layout-frame">
+          <div class="graph-pane">
+            <div id="graphStage" class="graph-stage"></div>
+            <div class="graph-caption">Ego network · selected frame + semantic neighbors</div>
+          </div>
+
+          <section class="reading-panel">
+            <div class="reading-inner">
+              <div class="reading-header">
+                <button id="backButton" class="ghost-button" aria-label="Back to topic">Back to topic</button>
+                <div class="reading-grid-note">${escapeHtml(relatedTopic?.label || frame.topic_label || "Unknown topic")}</div>
+              </div>
+
+              <div class="chip-row">
+                ${renderTagHtml(frame.frame_type || "other", FRAME_TYPE_COLORS[frame.frame_type] || FRAME_TYPE_COLORS.other)}
+                <span class="chip">${escapeHtml(frame.scope || "other")}</span>
+                <span class="chip">${escapeHtml(frame.applicability || "situational")}</span>
+              </div>
+
+              <h2 class="frame-title">${escapeHtml(frame.label || "Untitled frame")}</h2>
+
+              ${frame.thread_title ? `<div class="thread-title">${escapeHtml(frame.thread_title)}</div>` : ""}
+
+              <blockquote class="source-quote">${escapeHtml(frame.source_quote || "No source quote available.")}</blockquote>
+
+              <div class="meta-row">
+                <span>${escapeHtml(frame.author_username || "unknown")}</span>
+                <span class="meta-dot" style="background:${CREDIBILITY_COLORS[frame.credibility_tier] || CREDIBILITY_COLORS.low}"></span>
+                <span>${escapeHtml(frame.credibility_tier || "low")}</span>
+                <span>rep ${formatNumber(frame.author_reputation ?? 0)}</span>
+                <span>·</span>
+                <span style="color:${SE_SITE_COLORS[frame.se_site] || "var(--fg-muted)"}">${escapeHtml(frame.se_site || "unknown")}</span>
+                <span>·</span>
+                <span>${formatDate(frame.post_date)}</span>
+                <span>·</span>
+                <a class="meta-link" href="${escapeAttribute(frame.source_url || frame.thread_url || "#")}" target="_blank" rel="noopener noreferrer">Open on Stack Exchange -&gt;</a>
+              </div>
+
+              <section class="reading-section">
+                <div class="panel-kicker">Main point</div>
+                <div class="prose">${escapeHtml(frame.main_point || "No main point text available.")}</div>
+              </section>
+
+              <section class="reading-section">
+                <div class="panel-kicker">Connected frames</div>
+                ${renderConnectedGroupsHtml(groupedEdges)}
+              </section>
+            </div>
+          </section>
+        </section>
+      `;
+
+      document.getElementById("backButton")?.addEventListener("click", () => {
+        state.level = 2;
+        state.selectedFrameId = null;
+        state.entryAnchor = null;
+        render();
+      });
+
+      bindConnectedReasoningEvents();
+      bindConnectedCardNavigation();
+
+      const graphStage = document.getElementById("graphStage");
+
+      drawForceGraph({
+        container: graphStage,
+        nodes: egoNodes,
+        links: egoLinks.map(edge => ({ ...edge })),
+        ariaLabel: `Ego network for frame ${frame.label}`,
+        keyPrefix: "frame",
+        selectedId: frame.id,
+        chargeStrength: -120,
+        linkDistance: () => 40,
+        collidePadding: 6,
+        linkWidth: edge => confidenceWidth(edge.confidence, 1, 2.2),
+        linkColor: edge => edgeStrokeColor(edge.label, edge.confidence, 0.24),
+        nodeStroke: node => node.id === frame.id ? "rgba(255,107,61,0.8)" : "rgba(255,255,255,0.14)",
+        defaultAnchor: state.entryAnchor,
+        onNodeClick: node => {
+          if (node.id !== frame.id) openFrame(node.id, { x: node.x, y: node.y });
+        },
+        onNodeHover: node => {
+          const f = node.frame;
+          return `
+            <div class="tooltip-title">${escapeHtml(f.label || "Untitled frame")}</div>
+            <div class="tooltip-list">
+              <div class="tooltip-list-item">${escapeHtml(f.frame_type || "other")} · ${escapeHtml(f.se_site || "unknown")}</div>
+              <div class="tooltip-list-item">${escapeHtml(f.author_username || "unknown")} · ${formatDate(f.post_date)}</div>
+            </div>
+          `;
+        }
+      });
+
+      if (!egoNodes.length) {
+        renderEmptyGraph(graphStage, "No ego network available", "This frame has no visible semantic neighbors under the current filters.");
+      }
+
+      state.entryAnchor = null;
+    }
+
+    // 9. openTopic(id), openFrame(id), goBack() - navigation helpers that push to state.history.
+    function snapshotRoute() {
+      return {
+        level: state.level,
+        selectedTopicId: state.selectedTopicId,
+        selectedFrameId: state.selectedFrameId
+      };
+    }
+
+    function sameRoute(a, b) {
+      return a.level === b.level &&
+        a.selectedTopicId === b.selectedTopicId &&
+        a.selectedFrameId === b.selectedFrameId;
+    }
+
+    function openTopic(id, anchor = null) {
+      const next = { level: 2, selectedTopicId: id, selectedFrameId: null };
+      const current = snapshotRoute();
+      if (!sameRoute(current, next)) {
+        state.history.push(current);
+      }
+      state.level = 2;
+      state.selectedTopicId = id;
+      state.selectedFrameId = null;
+      state.entryAnchor = anchor;
+      render();
+    }
+
+    function openFrame(id, anchor = null) {
+      const frame = idx?.frameById.get(id);
+      if (!frame) return;
+
+      const next = { level: 3, selectedTopicId: frame.topic_id, selectedFrameId: id };
+      const current = snapshotRoute();
+      if (!sameRoute(current, next)) {
+        state.history.push(current);
+      }
+      state.level = 3;
+      state.selectedTopicId = frame.topic_id;
+      state.selectedFrameId = id;
+      state.entryAnchor = anchor;
+      render();
+    }
+
+    function goBack() {
+      const previous = state.history.pop();
+      if (previous) {
+        state.level = previous.level;
+        state.selectedTopicId = previous.selectedTopicId;
+        state.selectedFrameId = previous.selectedFrameId;
+        state.entryAnchor = null;
+        render();
+        return;
+      }
+
+      if (state.level === 3 && state.selectedTopicId != null) {
+        state.level = 2;
+        state.selectedFrameId = null;
+        render();
+        return;
+      }
+
+      if (state.level === 2) {
+        state.level = 1;
+        state.selectedTopicId = null;
+        state.selectedFrameId = null;
+        render();
+      }
+    }
+
+    // 10. Search indexing (simple client-side includes-match over frame.label/main_point/subject/author_username + topic.label).
+    function buildSearchIndex(data) {
+      const items = [];
+
+      for (const topic of data.topics || []) {
+        items.push({
+          kind: "topic",
+          id: topic.topic_id,
+          label: topic.label,
+          meta: `${topic.n_frames ?? 0} frames`,
+          haystack: [
+            topic.label,
+            ...(topic.keywords || [])
+          ].join(" ").toLowerCase()
+        });
+      }
+
+      for (const frame of data.frames || []) {
+        items.push({
+          kind: "frame",
+          id: frame.id,
+          label: frame.label,
+          meta: `${frame.topic_label || lookupTopicLabel(frame.topic_id)} · ${frame.author_username || "unknown"} · ${frame.se_site || "unknown"}`,
+          haystack: [
+            frame.label,
+            frame.main_point,
+            frame.subject,
+            frame.author_username,
+            frame.topic_label,
+            frame.se_site
+          ].filter(Boolean).join(" ").toLowerCase()
+        });
+      }
+
+      return items;
+    }
+
+    function updateSearchResults(query) {
+      const q = (query || "").trim().toLowerCase();
+      if (!q) {
+        els.searchResults.classList.remove("visible");
+        els.searchResults.innerHTML = "";
+        return [];
+      }
+
+      const matches = state.searchIndex
+        .map(item => {
+          const idxFound = item.haystack.indexOf(q);
+          if (idxFound === -1) return null;
+          const bias = item.kind === "topic" ? 10 : 0;
+          return { ...item, score: idxFound + bias };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.score - b.score || a.label.localeCompare(b.label))
+        .slice(0, 12);
+
+      els.searchResults.innerHTML = matches.map(item => `
+        <button
+          class="search-result js-search-result"
+          data-kind="${escapeAttribute(item.kind)}"
+          data-id="${escapeAttribute(String(item.id))}"
+          role="option"
+          aria-label="Open ${escapeHtml(item.kind)} ${escapeHtml(item.label)}"
+        >
+          <div class="result-kind">${escapeHtml(item.kind)}</div>
+          <div class="result-main">
+            <div class="result-label">${escapeHtml(item.label)}</div>
+            <div class="result-meta">${escapeHtml(item.meta)}</div>
+          </div>
+        </button>
+      `).join("");
+
+      els.searchResults.classList.toggle("visible", matches.length > 0);
+
+      for (const button of els.searchResults.querySelectorAll(".js-search-result")) {
+        button.addEventListener("click", () => {
+          const kind = button.getAttribute("data-kind");
+          const id = button.getAttribute("data-id");
+          if (kind === "topic") {
+            openTopic(Number(id));
+          } else if (kind === "frame") {
+            openFrame(id);
+          }
+          els.searchResults.classList.remove("visible");
+          els.searchInput.blur();
+        });
+      }
+
+      return matches;
+    }
+
+    // 11. Filter pill rendering + event binding.
+    function renderChrome() {
+      renderBreadcrumb();
+      renderLevelControls();
+      renderTemporalControls();
+      renderLegend();
+    }
+
+    function renderBreadcrumb() {
+      const crumbs = [];
+      crumbs.push(`<button class="crumb js-breadcrumb-root" aria-label="Go to topic overview">DFM Graph Explorer</button>`);
+
+      if (state.level >= 2 && state.selectedTopicId != null) {
+        crumbs.push(`<span class="crumb-sep">/</span>`);
+        const topicLabel = lookupTopicLabel(state.selectedTopicId);
+        if (state.level === 2) {
+          crumbs.push(`<span class="crumb current">${escapeHtml(topicLabel)}</span>`);
+        } else {
+          crumbs.push(`<button class="crumb js-breadcrumb-topic" aria-label="Return to topic ${escapeHtml(topicLabel)}">${escapeHtml(topicLabel)}</button>`);
+        }
+      }
+
+      if (state.level === 3 && state.selectedFrameId) {
+        const frame = idx?.frameById.get(state.selectedFrameId);
+        crumbs.push(`<span class="crumb-sep">/</span>`);
+        crumbs.push(`<span class="crumb current">${escapeHtml(truncate(frame?.label || state.selectedFrameId, 80))}</span>`);
+      }
+
+      els.breadcrumb.innerHTML = crumbs.join("");
+
+      els.breadcrumb.querySelector(".js-breadcrumb-root")?.addEventListener("click", () => {
+        state.level = 1;
+        state.selectedTopicId = null;
+        state.selectedFrameId = null;
+        state.entryAnchor = null;
+        render();
+      });
+
+      els.breadcrumb.querySelector(".js-breadcrumb-topic")?.addEventListener("click", () => {
+        if (state.selectedTopicId == null) return;
+        state.level = 2;
+        state.selectedFrameId = null;
+        state.entryAnchor = null;
+        render();
+      });
+    }
+
+    function renderLegend() {
+      els.legend.innerHTML = FRAME_TYPE_ORDER.map(type => `
+        <span class="legend-item">
+          <span class="swatch" style="background:${FRAME_TYPE_COLORS[type]}"></span>
+          <span>${escapeHtml(type)}</span>
+        </span>
+      `).join("");
+    }
+
+    function renderTemporalControls() {
+      els.temporalToggle.checked = !!state.temporalMode;
+      els.yearControl.innerHTML = state.temporalMode ? `
+        <label class="year-control" aria-label="Year filter">
+          <span>Year ≤ ${formatNumber(state.activeYear)}</span>
+          <input id="yearSlider" type="range" min="${escapeAttribute(String(data?.meta?.year_range?.[0] ?? 2010))}" max="${escapeAttribute(String(data?.meta?.year_range?.[1] ?? 2026))}" step="1" value="${escapeAttribute(String(state.activeYear))}">
+        </label>
+      ` : "";
+      document.getElementById("yearSlider")?.addEventListener("input", (event) => {
+        state.activeYear = Number(event.target.value);
+        render();
+      });
+    }
+
+    function renderLevelControls() {
+      els.levelControlsLeft.innerHTML = "";
+      els.levelControlsRight.innerHTML = "";
+
+      if (state.level === 1) {
+        els.levelControlsLeft.innerHTML = `
+          <span class="subtle-note">
+            generated ${escapeHtml(formatDateTime(data?.meta?.generated || ""))} · outliers ${formatNumber(data?.meta?.counts?.outliers ?? 0)}
+          </span>
+        `;
+
+        els.levelControlsRight.innerHTML = `
+          <label class="inline-range" aria-label="Minimum shared semantic edge weight">
+            <span>Min. N shared semantic edges <span class="count-inline">${formatNumber(state.minTopicEdgeWeight)}</span></span>
+            <input id="weightSlider" type="range" min="1" max="12" step="1" value="${escapeAttribute(String(state.minTopicEdgeWeight))}">
+          </label>
+        `;
+
+        document.getElementById("weightSlider")?.addEventListener("input", (event) => {
+          state.minTopicEdgeWeight = Number(event.target.value);
+          render();
+        });
+
+        return;
+      }
+
+      const frameTypePills = renderFrameTypePills();
+      const seSitePills = renderSeSitePills();
+
+      els.levelControlsLeft.innerHTML = `
+        <div class="pill-row" aria-label="Frame type filters">
+          <span class="pill-row-label">Frame types</span>
+          ${frameTypePills}
+        </div>
+        <div class="pill-row" aria-label="Stack Exchange site filters">
+          <span class="pill-row-label">Sites</span>
+          ${seSitePills}
+        </div>
+      `;
+
+      els.levelControlsRight.innerHTML = `
+        <label class="inline-select" aria-label="Credibility filter">
+          <span>Credibility</span>
+          <select id="credibilitySelect">
+            <option value="all" ${state.credibilityMin === "all" ? "selected" : ""}>All</option>
+            <option value="medium" ${state.credibilityMin === "medium" ? "selected" : ""}>Medium or higher</option>
+            <option value="high" ${state.credibilityMin === "high" ? "selected" : ""}>High only</option>
+          </select>
+        </label>
+        <button id="goBackButton" class="ghost-button" aria-label="Go back">Back</button>
+      `;
+
+      for (const button of els.levelControlsLeft.querySelectorAll(".js-frame-type-pill")) {
+        button.addEventListener("click", () => {
+          const type = button.getAttribute("data-type");
+          if (!type) return;
+          if (state.activeFrameTypes.has(type)) {
+            state.activeFrameTypes.delete(type);
+          } else {
+            state.activeFrameTypes.add(type);
+          }
+          render();
+        });
+      }
+
+      for (const button of els.levelControlsLeft.querySelectorAll(".js-site-pill")) {
+        button.addEventListener("click", () => {
+          const site = button.getAttribute("data-site");
+          if (!site) return;
+          if (state.activeSeSites.has(site)) {
+            state.activeSeSites.delete(site);
+          } else {
+            state.activeSeSites.add(site);
+          }
+          render();
+        });
+      }
+
+      document.getElementById("credibilitySelect")?.addEventListener("change", (event) => {
+        state.credibilityMin = event.target.value;
+        render();
+      });
+
+      document.getElementById("goBackButton")?.addEventListener("click", () => goBack());
+    }
+
+    function renderFrameTypePills() {
+      return FRAME_TYPE_ORDER.map(type => {
+        const active = state.activeFrameTypes.has(type);
+        const color = FRAME_TYPE_COLORS[type];
+        return `
+          <button
+            class="pill js-frame-type-pill ${active ? "is-active" : "is-off"}"
+            data-type="${escapeAttribute(type)}"
+            aria-pressed="${active ? "true" : "false"}"
+            aria-label="Toggle frame type ${escapeHtml(type)}"
+            style="${active ? `border-color:${hexToRgba(color, 0.28)}; background:${hexToRgba(color, 0.12)}; color:${color};` : ""}"
+          >
+            <span class="dot" style="background:${color}"></span>
+            <span>${escapeHtml(type)}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function renderSeSitePills() {
+      return SE_SITE_ORDER.map(site => {
+        const active = state.activeSeSites.has(site);
+        const color = SE_SITE_COLORS[site];
+        return `
+          <button
+            class="pill js-site-pill ${active ? "is-active" : "is-off"}"
+            data-site="${escapeAttribute(site)}"
+            aria-pressed="${active ? "true" : "false"}"
+            aria-label="Toggle site ${escapeHtml(site)}"
+            style="${active ? `border-color:${hexToRgba(color, 0.26)}; background:${hexToRgba(color, 0.10)}; color:${color};` : ""}"
+          >
+            <span class="dot" style="background:${color}"></span>
+            <span>${escapeHtml(site)}</span>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function bindStaticUI() {
+      els.temporalToggle.addEventListener("change", (event) => {
+        state.temporalMode = event.target.checked;
+        render();
+      });
+
+      els.searchInput.addEventListener("input", (event) => {
+        updateSearchResults(event.target.value);
+      });
+
+      els.searchInput.addEventListener("focus", (event) => {
+        if (event.target.value.trim()) {
+          updateSearchResults(event.target.value);
+        }
+      });
+
+      els.searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          const matches = updateSearchResults(els.searchInput.value);
+          if (matches[0]) {
+            if (matches[0].kind === "topic") {
+              openTopic(Number(matches[0].id));
+            } else {
+              openFrame(matches[0].id);
+            }
+            els.searchResults.classList.remove("visible");
+            els.searchInput.blur();
+          }
+        } else if (event.key === "Escape") {
+          els.searchResults.classList.remove("visible");
+          els.searchInput.blur();
+        }
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".search-wrap")) {
+          els.searchResults.classList.remove("visible");
+        }
+      });
+    }
+
+    // 12. Utilities: escapeHtml, formatDate, lookupTopicLabel.
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+
+    function formatDate(value) {
+      return value ? String(value).slice(0, 10) : "unknown";
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "unknown";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value).slice(0, 19);
+      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")} ${String(date.getUTCHours()).padStart(2, "0")}:${String(date.getUTCMinutes()).padStart(2, "0")} UTC`;
+    }
+
+    function lookupTopicLabel(topicId) {
+      return idx?.topicById.get(topicId)?.label ?? "Unknown topic";
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function truncate(value, limit = 60) {
+      const text = String(value ?? "");
+      if (text.length <= limit) return text;
+      return `${text.slice(0, Math.max(0, limit - 1)).trimEnd()}…`;
+    }
+
+    function hexToRgba(hex, alpha = 1) {
+      const normalized = String(hex).replace("#", "").trim();
+      const full = normalized.length === 3
+        ? normalized.split("").map(ch => ch + ch).join("")
+        : normalized;
+      const int = Number.parseInt(full, 16);
+      const r = (int >> 16) & 255;
+      const g = (int >> 8) & 255;
+      const b = int & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function confidenceWidth(confidence, low = 0.8, high = 2) {
+      if (confidence === "high") return high;
+      if (confidence === "medium") return (low + high) / 2;
+      return low;
+    }
+
+    function credibilityRank(tier) {
+      if (tier === "high") return 2;
+      if (tier === "medium") return 1;
+      return 0;
+    }
+
+    function passesTemporal(frame, state) {
+      if (!state.temporalMode) return true;
+      return Number(frame?.post_year ?? 0) <= Number(state.activeYear);
+    }
+
+    function passesCredibility(frame, state) {
+      if (state.credibilityMin === "all") return true;
+      const rank = credibilityRank(frame?.credibility_tier);
+      return state.credibilityMin === "medium" ? rank >= 1 : rank >= 2;
+    }
+
+    function passesFrameFilters(frame, state) {
+      if (!frame) return false;
+      if (!passesTemporal(frame, state)) return false;
+      if (!state.activeFrameTypes.has(frame.frame_type || "other")) return false;
+      if (!state.activeSeSites.has(frame.se_site || "")) return false;
+      if (!passesCredibility(frame, state)) return false;
+      return true;
+    }
+
+    function passesLevelFiltersExceptSelected(frame, state, selectedFrameId) {
+      if (!frame) return false;
+      if (frame.id === selectedFrameId) return true;
+      if (!passesTemporal(frame, state)) return false;
+      if (!state.activeFrameTypes.has(frame.frame_type || "other")) return false;
+      if (!state.activeSeSites.has(frame.se_site || "")) return false;
+      if (!passesCredibility(frame, state)) return false;
+      return true;
+    }
+
+    function dominantFrameType(distribution = {}, fallbackDistribution = {}) {
+      let bestType = "other";
+      let bestValue = -1;
+      const source = Object.keys(distribution).length ? distribution : fallbackDistribution;
+      for (const type of FRAME_TYPE_ORDER) {
+        const value = source[type] || 0;
+        if (value > bestValue) {
+          bestType = type;
+          bestValue = value;
+        }
+      }
+      return bestType;
+    }
+
+    function topDistributionEntries(distribution = {}, limit = 3) {
+      return FRAME_TYPE_ORDER
+        .map(type => ({ key: type, label: type, value: distribution[type] || 0 }))
+        .filter(item => item.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, limit);
+    }
+
+    function computeFrameTypeDistribution(frames) {
+      const dist = Object.fromEntries(FRAME_TYPE_ORDER.map(type => [type, 0]));
+      for (const frame of frames) {
+        const type = frame.frame_type || "other";
+        dist[type] = (dist[type] || 0) + 1;
+      }
+      return dist;
+    }
+
+    function computeTopicStats(data, state) {
+      const stats = new Map();
+      for (const topic of data.topics || []) {
+        stats.set(topic.topic_id, {
+          count: 0,
+          dist: Object.fromEntries(FRAME_TYPE_ORDER.map(type => [type, 0]))
+        });
+      }
+
+      const frames = state.temporalMode
+        ? data.frames.filter(frame => passesTemporal(frame, state))
+        : data.frames;
+
+      for (const frame of frames) {
+        if (frame.topic_id == null || frame.topic_id === -1) continue;
+        if (!stats.has(frame.topic_id)) continue;
+        const entry = stats.get(frame.topic_id);
+        entry.count += 1;
+        const type = frame.frame_type || "other";
+        entry.dist[type] = (entry.dist[type] || 0) + 1;
+      }
+
+      return stats;
+    }
+
+    function computeTopicAdjacency(data, idx, state) {
+      if (!state.temporalMode) {
+        return idx.adjacencyByTopic;
+      }
+
+      const tempMap = new Map();
+
+      for (const edge of data.semantic_edges || []) {
+        const sourceFrame = idx.frameById.get(edge.source);
+        const targetFrame = idx.frameById.get(edge.target);
+        if (!sourceFrame || !targetFrame) continue;
+        if (!passesTemporal(sourceFrame, state) || !passesTemporal(targetFrame, state)) continue;
+
+        const sourceTopic = sourceFrame.topic_id;
+        const targetTopic = targetFrame.topic_id;
+
+        if (
+          sourceTopic == null ||
+          targetTopic == null ||
+          sourceTopic === -1 ||
+          targetTopic === -1 ||
+          sourceTopic === targetTopic
+        ) {
+          continue;
+        }
+
+        const [a, b] = sourceTopic < targetTopic
+          ? [sourceTopic, targetTopic]
+          : [targetTopic, sourceTopic];
+
+        const key = `${a}|${b}`;
+        const existing = tempMap.get(key) || { source: a, target: b, weight: 0 };
+        existing.weight += 1;
+        tempMap.set(key, existing);
+      }
+
+      return Array.from(tempMap.values());
+    }
+
+    function resolveTopFrames(topic, filteredFrames, idx, limit = 5) {
+      const byId = new Map(filteredFrames.map(frame => [frame.id, frame]));
+      const picked = [];
+
+      for (const id of topic.top_frame_ids || []) {
+        const frame = byId.get(id);
+        if (frame) picked.push(frame);
+        if (picked.length >= limit) break;
+      }
+
+      if (picked.length < limit) {
+        const extras = filteredFrames
+          .filter(frame => !picked.some(existing => existing.id === frame.id))
+          .sort((a, b) => (b.post_score ?? 0) - (a.post_score ?? 0))
+          .slice(0, limit - picked.length);
+        picked.push(...extras);
+      }
+
+      return picked.slice(0, limit);
+    }
+
+    function renderDistributionBarHtml(distribution, total) {
+      if (!total) {
+        return `<div class="panel-subtitle">No visible frames to chart.</div>`;
+      }
+
+      return `
+        <div class="distribution-bar" aria-hidden="true">
+          ${FRAME_TYPE_ORDER.map(type => {
+            const count = distribution[type] || 0;
+            const width = total ? (count / total) * 100 : 0;
+            if (width <= 0) return "";
+            return `<span style="width:${width}%;background:${FRAME_TYPE_COLORS[type]}"></span>`;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function renderTagHtml(label, color) {
+      return `
+        <span class="tag" style="background:${hexToRgba(color, 0.14)}; border-color:${hexToRgba(color, 0.28)}; color:${color};">
+          ${escapeHtml(label)}
+        </span>
+      `;
+    }
+
+    function edgeStrokeColor(label, confidence, alphaBase = 0.18) {
+      const color = EDGE_LABEL_COLORS[label] || "#94a3b8";
+      const alpha = confidence === "high" ? alphaBase + 0.16 : confidence === "medium" ? alphaBase + 0.08 : alphaBase;
+      return hexToRgba(color, clamp(alpha, 0.08, 0.38));
+    }
+
+    function groupConnectedEdges(frameId, edges, idx) {
+      const groups = new Map();
+      for (const label of EDGE_LABEL_ORDER) groups.set(label, []);
+
+      for (const edge of edges) {
+        const neighborId = edge.source === frameId ? edge.target : edge.source;
+        const neighbor = idx.frameById.get(neighborId);
+        if (!neighbor) continue;
+        const label = edge.label || "SPECIFIES";
+        if (!groups.has(label)) groups.set(label, []);
+        groups.get(label).push({ edge, neighbor });
+      }
+
+      return groups;
+    }
+
+    function renderConnectedGroupsHtml(groupedEdges) {
+      const sections = EDGE_LABEL_ORDER.map(label => {
+        const items = groupedEdges.get(label) || [];
+        if (!items.length) return "";
+        return `
+          <div class="connected-group">
+            <div class="connected-group-title">
+              ${renderTagHtml(label, EDGE_LABEL_COLORS[label] || "#94a3b8")}
+              <span class="group-count">${formatNumber(items.length)}</span>
+            </div>
+            <div class="connected-list">
+              ${items.map(({ edge, neighbor }) => `
+                <article class="connected-card js-connected-card" data-frame-id="${escapeAttribute(neighbor.id)}" tabindex="0" role="button" aria-label="Open connected frame ${escapeHtml(neighbor.label)}">
+                  <div class="connected-card-header">
+                    <div class="connected-card-label">${escapeHtml(neighbor.label)}</div>
+                    <button class="why-button js-why-button" data-edge-id="${escapeAttribute(String(edge.id))}" aria-label="Show reasoning for semantic edge">Why?</button>
+                  </div>
+                  <div class="connected-card-meta">
+                    <span class="type-dot" style="background:${FRAME_TYPE_COLORS[neighbor.frame_type] || FRAME_TYPE_COLORS.other}"></span>
+                    <span>${escapeHtml(neighbor.frame_type || "other")}</span>
+                    <span class="confidence-tag" style="border-color:${hexToRgba(CONFIDENCE_COLORS[edge.confidence] || CONFIDENCE_COLORS.low, 0.3)}; color:${CONFIDENCE_COLORS[edge.confidence] || CONFIDENCE_COLORS.low};">
+                      ${escapeHtml(edge.confidence || "low")}
+                    </span>
+                    <span class="site-tag" style="border-color:${hexToRgba(SE_SITE_COLORS[neighbor.se_site] || "#777", 0.22)}; color:${SE_SITE_COLORS[neighbor.se_site] || "var(--fg-muted)"};">
+                      ${escapeHtml(neighbor.se_site || "unknown")}
+                    </span>
+                  </div>
+                  <div class="reasoning js-reasoning" data-edge-id="${escapeAttribute(String(edge.id))}">
+                    ${escapeHtml(edge.reasoning || "No reasoning available.")}
+                  </div>
+                </article>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }).filter(Boolean);
+
+      if (!sections.length) {
+        return `<p class="panel-subtitle">No connected frames are visible under the current filters.</p>`;
+      }
+
+      return sections.join("");
+    }
+
+    function bindConnectedReasoningEvents() {
+      for (const button of els.content.querySelectorAll(".js-why-button")) {
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const edgeId = button.getAttribute("data-edge-id");
+          if (!edgeId) return;
+          const reasoning = els.content.querySelector(`.js-reasoning[data-edge-id="${CSS.escape(edgeId)}"]`);
+          reasoning?.classList.toggle("visible");
+        });
+      }
+    }
+
+    function bindConnectedCardNavigation() {
+      for (const card of els.content.querySelectorAll(".js-connected-card")) {
+        const open = () => {
+          const frameId = card.getAttribute("data-frame-id");
+          if (frameId) openFrame(frameId);
+        };
+        card.addEventListener("click", open);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            open();
+          }
+        });
+      }
+    }
+
+    function showTooltip(html, x, y) {
+      els.tooltip.innerHTML = html;
+      els.tooltip.classList.add("visible");
+      els.tooltip.setAttribute("aria-hidden", "false");
+      positionTooltip(x, y);
+    }
+
+    function positionTooltip(x, y) {
+      const pad = 12;
+      const rect = els.tooltip.getBoundingClientRect();
+      let left = x + 14;
+      let top = y + 14;
+
+      if (left + rect.width > window.innerWidth - pad) {
+        left = x - rect.width - 14;
+      }
+      if (top + rect.height > window.innerHeight - pad) {
+        top = y - rect.height - 14;
+      }
+
+      els.tooltip.style.left = `${Math.max(pad, left)}px`;
+      els.tooltip.style.top = `${Math.max(pad, top)}px`;
+    }
+
+    function hideTooltip() {
+      els.tooltip.classList.remove("visible");
+      els.tooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function renderEmptyGraph(container, title, copy) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "empty-state";
+      wrapper.innerHTML = `
+        <div class="empty-state-inner">
+          <div class="empty-title">${escapeHtml(title)}</div>
+          <p class="empty-copy">${escapeHtml(copy)}</p>
+        </div>
+      `;
+      container.appendChild(wrapper);
+    }
+
+    function showLoadError(message) {
+      els.errorMessage.innerHTML = escapeHtml(message).replaceAll("\n", "<br>");
+      els.errorState.classList.add("visible");
+      els.content.innerHTML = `
+        <div class="error-card">
+          <div class="error-card-inner">
+            <h2 class="error-title">Could not load graph data</h2>
+            <p class="error-copy">${escapeHtml(message).replaceAll("\n", "<br>")}</p>
+            ${window.location.protocol === "file:" ? `<div class="error-command">python -m http.server 8000</div>` : ""}
+          </div>
+        </div>
+      `;
+    }
+
+    function debounce(fn, wait = 120) {
+      let timer = null;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), wait);
+      };
+    }
+
+    function drawForceGraph({
+      container,
+      nodes,
+      links,
+      ariaLabel,
+      keyPrefix,
+      selectedId = null,
+      chargeStrength = -180,
+      linkDistance = () => 40,
+      collidePadding = 4,
+      linkWidth = () => 1,
+      linkColor = () => "rgba(255,255,255,0.12)",
+      nodeStroke = () => "rgba(255,255,255,0.14)",
+      defaultAnchor = null,
+      onNodeClick = null,
+      onNodeHover = null,
+      labelAccessor = null,
+      labelFilter = null
+    }) {
+      container.innerHTML = "";
+
+      const bounds = container.getBoundingClientRect();
+      const width = Math.max(320, Math.floor(bounds.width || container.clientWidth || 640));
+      const height = Math.max(320, Math.floor(bounds.height || container.clientHeight || 520));
+
+      const svg = d3.select(container)
+        .append("svg")
+        .attr("class", "graph-svg")
+        .attr("role", "img")
+        .attr("aria-label", ariaLabel);
+
+      const g = svg.append("g").attr("class", "viewport");
+      const linkLayer = g.append("g").attr("class", "links");
+      const nodeLayer = g.append("g").attr("class", "nodes");
+      const labelLayer = labelAccessor ? g.append("g").attr("class", "labels") : null;
+
+      svg.call(
+        d3.zoom()
+          .scaleExtent([0.2, 8])
+          .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+          })
+      );
+
+      const localNodes = nodes.map(node => {
+        const key = `${keyPrefix}:${node.id}`;
+        const previous = state.nodePositions.get(key);
+        const x = previous?.x ?? defaultAnchor?.x ?? width / 2 + (Math.random() - 0.5) * 40;
+        const y = previous?.y ?? defaultAnchor?.y ?? height / 2 + (Math.random() - 0.5) * 40;
+        return { ...node, x, y };
+      });
+
+      const localLinks = links.map(link => ({ ...link }));
+
+      const link = linkLayer.selectAll("line")
+        .data(localLinks, d => d.id ?? `${d.source}-${d.target}`)
+        .join("line")
+        .attr("class", "graph-link")
+        .attr("stroke", d => linkColor(d))
+        .attr("stroke-width", d => linkWidth(d))
+        .attr("opacity", 1);
+
+      const node = nodeLayer.selectAll("g")
+        .data(localNodes, d => d.id)
+        .join(enter => {
+          const group = enter.append("g")
+            .attr("class", d => `graph-node${d.id === selectedId ? " is-selected" : ""}${d.muted ? " is-muted" : ""}`)
+            .attr("tabindex", 0)
+            .attr("role", "button")
+            .attr("aria-label", d => d.label || String(d.id));
+
+          group.append("circle")
+            .attr("class", "selection-ring")
+            .attr("r", d => d.id === selectedId ? d.r + 5 : 0);
+
+          group.append("circle")
+            .attr("class", "core")
+            .attr("r", d => d.r)
+            .attr("fill", d => {
+              const frameType = d.frame?.frame_type || d.dominantType || "other";
+              return FRAME_TYPE_COLORS[frameType] || FRAME_TYPE_COLORS.other;
+            })
+            .attr("stroke", d => nodeStroke(d))
+            .attr("stroke-width", d => d.id === selectedId ? 2 : 1);
+
+          group.append("title").text(d => d.label || String(d.id));
+          return group;
+        });
+
+      node
+        .on("mouseenter", function(event, d) {
+          if (!onNodeHover) return;
+          const html = onNodeHover(d);
+          if (html) showTooltip(html, event.clientX, event.clientY);
+        })
+        .on("mousemove", function(event) {
+          if (!onNodeHover) return;
+          positionTooltip(event.clientX, event.clientY);
+        })
+        .on("mouseleave", function() {
+          hideTooltip();
+        })
+        .on("focus", function(event, d) {
+          if (!onNodeHover) return;
+          const html = onNodeHover(d);
+          const rect = event.currentTarget.getBoundingClientRect();
+          if (html) showTooltip(html, rect.right + 10, rect.top + 10);
+        })
+        .on("blur", function() {
+          hideTooltip();
+        })
+        .on("click", function(event, d) {
+          event.stopPropagation();
+          onNodeClick?.(d);
+        })
+        .on("keydown", function(event, d) {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onNodeClick?.(d);
+          }
+        });
+
+      const drag = d3.drag()
+        .on("start", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0.2).restart();
+          d.fx = d.x;
+          d.fy = d.y;
+        })
+        .on("drag", (event, d) => {
+          d.fx = event.x;
+          d.fy = event.y;
+        })
+        .on("end", (event, d) => {
+          if (!event.active) simulation.alphaTarget(0);
+          d.fx = null;
+          d.fy = null;
+        });
+
+      node.call(drag);
+
+      let labels = null;
+      if (labelAccessor && labelLayer) {
+        labels = labelLayer.selectAll("text")
+          .data(localNodes.filter(d => labelFilter ? labelFilter(d) : true), d => d.id)
+          .join("text")
+          .attr("class", "graph-label")
+          .text(d => labelAccessor(d));
+      }
+
+      const simulation = d3.forceSimulation(localNodes)
+        .force("link", d3.forceLink(localLinks).id(d => d.id).distance(linkDistance).strength(0.18))
+        .force("charge", d3.forceManyBody().strength(chargeStrength))
+        .force("center", d3.forceCenter(width / 2, height / 2))
+        .force("collide", d3.forceCollide().radius(d => d.r + collidePadding))
+        .velocityDecay(0.28);
+
+      state.simulation = simulation;
+
+      function ticked() {
+        for (const nodeDatum of localNodes) {
+          nodeDatum.x = clamp(nodeDatum.x, nodeDatum.r + 24, width - nodeDatum.r - 24);
+          nodeDatum.y = clamp(nodeDatum.y, nodeDatum.r + 24, height - nodeDatum.r - 24);
+          state.nodePositions.set(`${keyPrefix}:${nodeDatum.id}`, { x: nodeDatum.x, y: nodeDatum.y });
+        }
+
+        link
+          .attr("x1", d => d.source.x)
+          .attr("y1", d => d.source.y)
+          .attr("x2", d => d.target.x)
+          .attr("y2", d => d.target.y);
+
+        node
+          .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        if (labels) {
+          labels
+            .attr("x", d => d.x)
+            .attr("y", d => d.y + d.r + 13);
+        }
+      }
+
+      if (REDUCED_MOTION) {
+        simulation.stop();
+        for (let i = 0; i < 180; i += 1) simulation.tick();
+        ticked();
+      } else {
+        simulation.on("tick", ticked);
+        setTimeout(() => simulation.alphaTarget(0), 900);
+      }
+    }
+  </script>
+</body>
+</html>

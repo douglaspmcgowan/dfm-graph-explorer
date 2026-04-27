@@ -1,0 +1,9 @@
+reference/
+_delegate_*.py
+*.draft.*
+PLAN.md
+.claude/
+export_graph.py
+split_graph_data.py
+graph_data.json
+review_report.md

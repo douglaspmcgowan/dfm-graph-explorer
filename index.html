@@ -4082,15 +4082,27 @@
       // from the "▶ Take the tour" button inside the What is this? dialog.
       const TOUR_STEPS = [
         {
+          selector: null,
+          title: "What you\u2019re looking at",
+          body: "Engineers share deep expertise in Stack Exchange threads \u2014 but it gets buried in replies. This tool extracts ~3,900 discrete claims from 5 SE communities (Engineering, Electronics, Robotics, Mechanics, Woodworking) and structures them as a navigable knowledge graph.",
+          pos: "center"
+        },
+        {
+          selector: null,
+          title: "Why a graph?",
+          body: "Engineering knowledge isn\u2019t a flat list \u2014 ideas build on, contradict, and extend each other across domains. The graph makes that structure visible: clusters show what subjects dominate the corpus, edges show which topics share linked evidence.",
+          pos: "center"
+        },
+        {
           selector: "#content",
           title: "39 topic clusters",
-          body: "Each bubble is a topic — a cluster of related engineering frames pulled from Stack Exchange. Bubble size = frame count. Lines connect topics that share semantically-linked evidence.",
+          body: "Each bubble is a topic \u2014 a cluster of related engineering frames. Bubble size = frame count. Lines connect topics that share semantically-linked evidence. Click any bubble to drill in.",
           pos: "center"
         },
         {
           selector: "#content",
           title: "Three levels of drill-down",
-          body: "Click any topic bubble to see its frames. Click a frame to read the source quote and its semantic neighbors. The breadcrumb at top-left tracks where you are; Back goes up a level.",
+          body: "Click a topic bubble to see its frames. Click a frame to read the source quote and its semantic neighbors. The breadcrumb at top-left tracks where you are; Back goes up a level.",
           pos: "center"
         },
         {
@@ -4107,8 +4119,8 @@
         },
         {
           selector: "#helpButton",
-          title: "You're all set",
-          body: "This button reopens the reference guide and vocabulary glossary. Inside it you'll find a \u201cTake the tour\u201d button to restart this walkthrough anytime.",
+          title: "You\u2019re all set",
+          body: "This button reopens the reference guide and vocabulary glossary. Inside it you\u2019ll find a \u201cTake the tour\u201d button to restart this walkthrough anytime.",
           pos: "below-left"
         }
       ];

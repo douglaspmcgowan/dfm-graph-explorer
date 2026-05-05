@@ -1829,6 +1829,125 @@
     .tour-dot.active {
       background: var(--accent);
     }
+
+    /* ── Tour dropdown ──────────────────────────────────── */
+    .tour-dropdown { position: relative; display: inline-flex; }
+    .tour-dropdown-btn {
+      display: flex; align-items: center; gap: 5px;
+      background: transparent; border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--fg-muted);
+      font-size: 12px; padding: 5px 10px; cursor: pointer;
+      font-family: inherit;
+      transition: background var(--ease-fast), color var(--ease-fast);
+    }
+    .tour-dropdown-btn:hover { background: var(--surface-2); color: var(--fg); }
+    .tour-dropdown-arrow { font-size: 9px; opacity: 0.55; line-height: 1; }
+    .tour-menu {
+      position: absolute; top: calc(100% + 5px); right: 0;
+      background: var(--surface-2); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); min-width: 190px;
+      padding: 4px; box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+      z-index: 600; display: none; flex-direction: column; gap: 1px;
+    }
+    .tour-menu.open { display: flex; }
+    .tour-menu-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 11px; border-radius: calc(var(--radius) - 1px);
+      font-size: 12px; color: var(--fg-muted); cursor: pointer;
+      background: transparent; border: none; width: 100%; text-align: left;
+      font-family: inherit;
+      transition: background var(--ease-fast), color var(--ease-fast);
+    }
+    .tour-menu-item:hover { background: var(--surface-3); color: var(--fg); }
+    .tour-menu-item-label { display: flex; flex-direction: column; gap: 1px; }
+    .tour-menu-item-sub { font-size: 10px; color: var(--fg-faint); }
+    .tour-menu-sep { height: 1px; background: var(--border); margin: 3px 2px; }
+    .tour-menu-check { color: var(--accent); font-size: 12px; }
+
+    /* ── 60-second story overlay ───────────────────────── */
+    #storyOverlay {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(0,0,0,0.62);
+      display: none; align-items: flex-end; justify-content: center;
+      padding-bottom: 28px; padding-left: 16px; padding-right: 16px;
+    }
+    #storyOverlay.active { display: flex; }
+    .story-card {
+      width: 500px; max-width: 100%;
+      background: rgba(19,19,22,0.97); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 22px 22px 16px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.55);
+    }
+    .story-kicker {
+      font-size: 10.5px; color: var(--fg-faint); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .story-title { font-size: 17px; font-weight: 700; color: var(--fg); margin: 0 0 8px; }
+    .story-body  { font-size: 13px; color: var(--fg-muted); line-height: 1.62; margin: 0 0 16px; }
+    .story-timer-track {
+      height: 2px; background: var(--surface-3); border-radius: 999px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .story-timer-fill {
+      height: 100%; background: var(--accent); border-radius: 999px;
+      width: 0%;
+    }
+    .story-actions { display: flex; align-items: center; justify-content: space-between; }
+    .story-nav     { display: flex; align-items: center; gap: 8px; }
+
+    /* ── Notable findings card ─────────────────────────── */
+    #findingsCard {
+      position: fixed; bottom: 24px; left: 24px; z-index: 490;
+      width: 290px;
+      background: rgba(19,19,22,0.97); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 14px 15px 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: none;
+      animation: findings-slide-in 0.35s cubic-bezier(0.22,1,0.36,1);
+    }
+    @keyframes findings-slide-in {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    #findingsCard.visible { display: block; }
+    .findings-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .findings-kicker { font-size: 10px; color: var(--accent); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; }
+    .findings-close  { background: none; border: none; color: var(--fg-faint); font-size: 16px; cursor: pointer; padding: 0; line-height: 1; }
+    .findings-close:hover { color: var(--fg); }
+    .finding-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
+    .finding-text { font-size: 11.5px; color: var(--fg-muted); line-height: 1.45; flex: 1; }
+    .finding-label { font-weight: 600; color: var(--fg); display: block; }
+    .finding-detail { font-size: 10.5px; color: var(--fg-faint); }
+    .finding-show   { font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; white-space: nowrap; padding: 2px 0 0; flex-shrink: 0; font-family: inherit; }
+    .finding-show:hover { text-decoration: underline; }
+
+    /* ── Corpus headline ───────────────────────────────── */
+    .corpus-headline {
+      font-size: 10.5px; color: var(--fg-faint); text-align: center;
+      padding: 5px 16px 0; letter-spacing: 0.02em; line-height: 1.4;
+    }
+
+    /* ── Attractor caption ─────────────────────────────── */
+    #attractorCaption {
+      position: fixed; z-index: 460; pointer-events: none;
+      background: rgba(19,19,22,0.93); border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg); padding: 9px 13px;
+      display: none; max-width: 220px;
+    }
+    #attractorCaption.visible {
+      display: block;
+      animation: attractor-fade 0.4s ease;
+    }
+    @keyframes attractor-fade {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .attractor-topic { font-size: 12px; font-weight: 600; color: var(--fg); margin: 0 0 2px; }
+    .attractor-meta  { font-size: 10.5px; color: var(--fg-faint); margin: 0; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 </head>
@@ -1877,10 +1996,37 @@
             <div id="yearControl" class="year-control" aria-live="polite"></div>
           </div>
 
-          <button id="tourButton" class="help-button" aria-label="Take the tour" title="Take the tour" style="margin-right:4px;">
-            <span class="help-icon" aria-hidden="true">▶</span>
-            <span class="help-text">Tour</span>
-          </button>
+          <div class="tour-dropdown" id="tourDropdown" style="margin-right:4px;">
+            <button class="tour-dropdown-btn" id="tourDropdownBtn"
+              aria-haspopup="true" aria-expanded="false" aria-label="Tour and demo options">
+              <span aria-hidden="true">▶</span>
+              <span>Tour</span>
+              <span class="tour-dropdown-arrow" aria-hidden="true">▾</span>
+            </button>
+            <div class="tour-menu" id="tourMenu" role="menu">
+              <button class="tour-menu-item" id="storyBtn" role="menuitem">
+                <div class="tour-menu-item-label">
+                  <span>60-Second Story</span>
+                  <span class="tour-menu-item-sub">auto-advancing overview</span>
+                </div>
+                <span style="font-size:10px;opacity:0.45">▶</span>
+              </button>
+              <button class="tour-menu-item" id="tourMenuBtn" role="menuitem">
+                <div class="tour-menu-item-label">
+                  <span>Interactive Tour</span>
+                  <span class="tour-menu-item-sub">7-step spotlight walkthrough</span>
+                </div>
+              </button>
+              <div class="tour-menu-sep"></div>
+              <button class="tour-menu-item" id="demoModeBtn" role="menuitem">
+                <div class="tour-menu-item-label">
+                  <span>Demo mode</span>
+                  <span class="tour-menu-item-sub">idle attractor loop</span>
+                </div>
+                <span class="tour-menu-check" id="demoModeCheck" style="display:none">✓</span>
+              </button>
+            </div>
+          </div>
           <button id="helpButton" class="help-button" aria-label="What is this?" title="What is this?">
             <span class="help-icon" aria-hidden="true">?</span>
             <span class="help-text">What is this?</span>
@@ -2003,6 +2149,44 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- 60-second story overlay -->
+  <div id="storyOverlay" aria-hidden="true">
+    <div class="story-card" role="dialog" aria-label="60-second story">
+      <div class="story-kicker">
+        <span>Story &middot; <span id="storyCounter">1 / 5</span></span>
+        <span id="storyAutoHint" style="font-size:10px;opacity:0.45">auto-advancing</span>
+      </div>
+      <h3 id="storyTitle" class="story-title"></h3>
+      <p  id="storyBody"  class="story-body"></p>
+      <div class="story-timer-track">
+        <div class="story-timer-fill" id="storyTimerFill"></div>
+      </div>
+      <div class="story-actions">
+        <button id="storySkip" class="ghost-button" style="font-size:12px;">Skip</button>
+        <div class="story-nav">
+          <button id="storyPrev"  class="ghost-button icon-only" aria-label="Previous" style="font-size:13px;" disabled>&#8592;</button>
+          <button id="storyPause" class="ghost-button" style="font-size:12px;">Pause</button>
+          <button id="storyNext"  class="tour-btn-primary">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notable findings card -->
+  <div id="findingsCard" role="complementary" aria-label="Notable findings">
+    <div class="findings-header">
+      <div class="findings-kicker">Notable findings</div>
+      <button class="findings-close" id="findingsClose" aria-label="Dismiss findings">&times;</button>
+    </div>
+    <div id="findingsList"></div>
+  </div>
+
+  <!-- Attractor caption (positioned by JS) -->
+  <div id="attractorCaption" aria-hidden="true">
+    <p class="attractor-topic" id="attractorTopicLabel"></p>
+    <p class="attractor-meta"  id="attractorTopicMeta"></p>
   </div>
 
   <div id="errorState" class="error-overlay" aria-live="assertive">
@@ -2174,6 +2358,23 @@
     let _allFramesTeardown = null;
     let _topicCanvasTeardown = null;   // teardown handle for L2 topic canvas
     let _forceGraphPositionCache = null; // { key: string, positions: Map<frameId,{x,y}> }
+
+    // Controller returned by drawForceGraph for the L1 SVG graph.
+    // Used by the idle attractor to programmatically zoom/pan the graph.
+    let _l1GraphCtrl = null;
+
+    // Idle attractor state
+    let _attractorEnabled = false;
+    let _attractorTimer   = null;
+    let _idleTimer        = null;
+    let _attractorTopicIdx = 0;
+
+    // 60-second story state
+    let _storyStep     = 0;
+    let _storyPaused   = false;
+    let _storyTimeout  = null;
+    let _storyRafId    = null;
+    let STORY_STEPS    = [];  // built lazily at startStory() time
 
     function wireContinuousSlider(el, { onInput, onCommit }) {
       const startDrag = () => { _draggingSlider = true; };
@@ -2547,6 +2748,13 @@
     function render() {
       if (!data || !idx) return;
 
+      // Stop the attractor whenever we navigate away from plain L1.
+      // Also null the ctrl so stale zoom references don't linger.
+      if (state.level !== 1 || state.forceGraphMode) {
+        if (_attractorEnabled) stopAttractor();
+        _l1GraphCtrl = null;
+      }
+
       if (state.simulation) {
         state.simulation.stop();
         state.simulation = null;
@@ -2629,8 +2837,9 @@
       els.content.innerHTML = `
         <section class="layout layout-overview">
           <div class="graph-pane">
+            <div class="corpus-headline">~3,900 engineering claims &middot; 39 topic clusters &middot; 5 Stack Exchange communities</div>
             <div id="graphStage" class="graph-stage"></div>
-            <div class="graph-caption">Drag nodes · scroll to zoom · click a topic to inspect frames</div>
+            <div class="graph-caption">Drag nodes &middot; scroll to zoom &middot; click a topic to inspect frames</div>
           </div>
           <aside class="panel">
             <div class="panel-inner">
@@ -2695,7 +2904,7 @@
 
       const graphStage = document.getElementById("graphStage");
 
-      drawForceGraph({
+      _l1GraphCtrl = drawForceGraph({
         container: graphStage,
         nodes,
         links: visibleEdges.map(edge => ({ ...edge })),
@@ -2735,6 +2944,12 @@
       if (!nodes.length) {
         renderEmptyGraph(graphStage, "No topics available", "No topic nodes were found in the loaded dataset.");
       }
+
+      // Show notable findings card on first L1 visit
+      _maybeShowFindingsCard(data);
+
+      // Start idle attractor timer if demo mode is on
+      if (_attractorEnabled) resetIdleTimer();
     }
 
     // 6b. renderLevel1ForceGraph — canvas-rendered all-frames "field map".
@@ -3498,6 +3713,345 @@
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // NOTABLE FINDINGS CARD
+    // ─────────────────────────────────────────────────────────────────────────
+    function _computeFindings(data) {
+      const topics = (data?.topics || []).filter(t => t.topic_id >= 0);
+      if (!topics.length) return [];
+
+      const largest = [...topics].sort((a, b) => b.n_frames - a.n_frames)[0];
+      const mostHeuristics = [...topics].sort((a, b) =>
+        (b.frame_type_distribution?.heuristic || 0) - (a.frame_type_distribution?.heuristic || 0)
+      )[0];
+      const mostRisks = [...topics].sort((a, b) =>
+        (b.frame_type_distribution?.risk || 0) - (a.frame_type_distribution?.risk || 0)
+      )[0];
+
+      return [
+        {
+          text: "Largest cluster",
+          label: largest?.label ?? "—",
+          detail: `${largest?.n_frames ?? 0} frames`,
+          topicId: largest?.topic_id
+        },
+        {
+          text: "Most heuristic-dense",
+          label: mostHeuristics?.label ?? "—",
+          detail: `${mostHeuristics?.frame_type_distribution?.heuristic ?? 0} heuristics`,
+          topicId: mostHeuristics?.topic_id
+        },
+        {
+          text: "Highest risk density",
+          label: mostRisks?.label ?? "—",
+          detail: `${mostRisks?.frame_type_distribution?.risk ?? 0} risk frames`,
+          topicId: mostRisks?.topic_id
+        }
+      ];
+    }
+
+    function _maybeShowFindingsCard(data) {
+      try { if (sessionStorage.getItem("dfm-findings-seen")) return; } catch (_) {}
+      const card = document.getElementById("findingsCard");
+      if (!card) return;
+      const list = document.getElementById("findingsList");
+      if (!list) return;
+
+      const findings = _computeFindings(data);
+      list.innerHTML = "";
+      findings.forEach(f => {
+        const item = document.createElement("div");
+        item.className = "finding-item";
+        item.innerHTML = `
+          <div class="finding-text">
+            <span style="font-size:10px;color:var(--fg-faint);display:block;margin-bottom:1px;">${escapeHtml(f.text)}</span>
+            <span class="finding-label">${escapeHtml(f.label)}</span>
+            <span class="finding-detail">${escapeHtml(f.detail)}</span>
+          </div>
+          <button class="finding-show" data-topic-id="${f.topicId}">Show &rarr;</button>
+        `;
+        item.querySelector(".finding-show").addEventListener("click", () => {
+          hideFindingsCard();
+          openTopic(f.topicId);
+        });
+        list.appendChild(item);
+      });
+      card.classList.add("visible");
+    }
+
+    function hideFindingsCard() {
+      const card = document.getElementById("findingsCard");
+      card?.classList.remove("visible");
+      try { sessionStorage.setItem("dfm-findings-seen", "1"); } catch (_) {}
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 60-SECOND STORY
+    // ─────────────────────────────────────────────────────────────────────────
+    function _buildStorySteps(data) {
+      const topics = (data?.topics || []).filter(t => t.topic_id >= 0)
+        .sort((a, b) => b.n_frames - a.n_frames);
+      const top    = topics[0];
+      const total  = data?.meta?.counts?.frames ?? 3879;
+      const edges  = data?.meta?.counts?.semantic_edges ?? 4193;
+
+      return [
+        {
+          title: "A map of engineering know-how",
+          body: `Buried in Stack Exchange threads are ~${total.toLocaleString()} discrete engineering claims — risks, heuristics, principles, worked cases. This tool extracts and structures them as a navigable knowledge graph.`,
+          nav: null
+        },
+        {
+          title: `The largest cluster: ${top?.label ?? "—"}`,
+          body: `${top?.n_frames ?? 0} frames about ${top?.label ?? "this topic"}. Bubble size = frame count. Edges connect topics that share semantically-linked evidence.`,
+          nav: async () => {
+            if (top != null && _l1GraphCtrl) {
+              // Navigate back to L1 first if needed
+              if (state.level !== 1) {
+                state.level = 1; state.selectedTopicId = null; state.selectedFrameId = null;
+                render(); writeRouteToHash();
+                await new Promise(r => setTimeout(r, 400));
+              }
+              await _attractorZoomTo(top.topic_id, 1600);
+            }
+          }
+        },
+        {
+          title: "Inside a topic cluster",
+          body: `Each row is a discrete engineering claim. Click any frame to read its source quote, author, and its semantic connections to other claims.`,
+          nav: async () => {
+            if (top != null) {
+              _attractorZoomReset(350);
+              await new Promise(r => setTimeout(r, 380));
+              // Interrupt any lingering zoom transition before openTopic
+              // replaces the DOM — otherwise D3 fires on a disconnected SVG.
+              if (_l1GraphCtrl) _l1GraphCtrl.svg.interrupt();
+              await openTopic(top.topic_id);
+            }
+          }
+        },
+        {
+          title: `${edges.toLocaleString()} semantic connections`,
+          body: `Model-inferred relationships link frames across topics — elaborations, contradictions, evidence chains. Engineering knowledge crosses domain boundaries constantly.`,
+          nav: async () => {
+            // Return to L1
+            state.level = 1; state.selectedTopicId = null; state.selectedFrameId = null;
+            render(); writeRouteToHash();
+            await new Promise(r => setTimeout(r, 400));
+          }
+        },
+        {
+          title: "Now it’s yours",
+          body: `Click any cluster to explore its frames. Search by topic, keyword, or author. Filter by frame type, year, or SE site. The breadcrumb tracks where you are.`,
+          nav: null
+        }
+      ];
+    }
+
+    function startStory() {
+      if (!data) return;
+      hideFindingsCard();
+      STORY_STEPS = _buildStorySteps(data);
+      _storyStep   = 0;
+      _storyPaused = false;
+      const overlay = document.getElementById("storyOverlay");
+      if (overlay) { overlay.classList.add("active"); overlay.setAttribute("aria-hidden", "false"); }
+      _storyShowStep(0);
+    }
+
+    function closeStory() {
+      clearTimeout(_storyTimeout);
+      cancelAnimationFrame(_storyRafId);
+      const overlay = document.getElementById("storyOverlay");
+      if (overlay) { overlay.classList.remove("active"); overlay.setAttribute("aria-hidden", "true"); }
+      // Ensure we land on L1
+      if (state.level !== 1) {
+        state.level = 1; state.selectedTopicId = null; state.selectedFrameId = null;
+        render(); writeRouteToHash();
+      }
+    }
+
+    async function _storyShowStep(n) {
+      if (!STORY_STEPS.length) return;
+      const step = STORY_STEPS[n];
+      const counter   = document.getElementById("storyCounter");
+      const titleEl   = document.getElementById("storyTitle");
+      const bodyEl    = document.getElementById("storyBody");
+      const prevBtn   = document.getElementById("storyPrev");
+      const nextBtn   = document.getElementById("storyNext");
+      const pauseBtn  = document.getElementById("storyPause");
+      const fill      = document.getElementById("storyTimerFill");
+      const autoHint  = document.getElementById("storyAutoHint");
+
+      if (counter)  counter.textContent = `${n + 1} / ${STORY_STEPS.length}`;
+      if (titleEl)  titleEl.textContent = step.title;
+      if (bodyEl)   bodyEl.textContent  = step.body;
+      if (prevBtn)  prevBtn.disabled    = n === 0;
+      if (nextBtn)  nextBtn.textContent = n === STORY_STEPS.length - 1 ? "Close ✓" : "Next →";
+      if (pauseBtn) pauseBtn.textContent = _storyPaused ? "Resume" : "Pause";
+      if (autoHint) autoHint.textContent = _storyPaused ? "paused" : "auto-advancing";
+
+      // Reset fill bar
+      clearTimeout(_storyTimeout);
+      cancelAnimationFrame(_storyRafId);
+      if (fill) { fill.style.transition = "none"; fill.style.width = "0%"; }
+
+      // Run nav action
+      if (step.nav) {
+        try { await step.nav(); } catch (e) { console.warn("[story] nav error:", e); }
+      }
+
+      if (_storyPaused) return;
+
+      // Animate fill over 10 s then advance
+      const DURATION = 10000;
+      _storyRafId = requestAnimationFrame(() => {
+        if (fill) { fill.style.transition = `width ${DURATION}ms linear`; fill.style.width = "100%"; }
+      });
+      _storyTimeout = setTimeout(() => {
+        if (_storyPaused) return;
+        if (n < STORY_STEPS.length - 1) {
+          _storyStep = n + 1;
+          _storyShowStep(_storyStep);
+        } else {
+          closeStory();
+        }
+      }, DURATION);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // IDLE ATTRACTOR
+    // ─────────────────────────────────────────────────────────────────────────
+    function _attractorZoomTo(topicId, durationMs) {
+      return new Promise(resolve => {
+        if (!_l1GraphCtrl) { resolve(); return; }
+        const { svg, zoomBehavior, getNodes, width, height } = _l1GraphCtrl;
+        const nodes = getNodes();
+        const node  = nodes.find(n => n.id === topicId);
+        if (!node) { resolve(); return; }
+        const k  = 2.6;
+        const tx = width  / 2 - node.x * k;
+        const ty = height / 2 - node.y * k;
+        const target = d3.zoomIdentity.translate(tx, ty).scale(k);
+        svg.transition().duration(durationMs)
+          .call(zoomBehavior.transform, target)
+          .on("end", resolve)
+          .on("interrupt", resolve);
+      });
+    }
+
+    function _attractorZoomReset(durationMs) {
+      if (!_l1GraphCtrl) return;
+      const { svg, zoomBehavior } = _l1GraphCtrl;
+      svg.transition().duration(durationMs ?? 900)
+        .call(zoomBehavior.transform, d3.zoomIdentity);
+    }
+
+    function _attractorShowCaption(topic) {
+      if (!_l1GraphCtrl) return;
+      const { svg, getNodes } = _l1GraphCtrl;
+      const nodes = getNodes();
+      const node  = nodes.find(n => n.id === topic.topic_id);
+      const captionEl = document.getElementById("attractorCaption");
+      if (!captionEl || !node) return;
+
+      // Convert sim coords to screen coords using current zoom transform
+      const transform = d3.zoomTransform(svg.node());
+      const svgRect   = svg.node().getBoundingClientRect();
+      const sx = svgRect.left + transform.applyX(node.x);
+      const sy = svgRect.top  + transform.applyY(node.y);
+
+      document.getElementById("attractorTopicLabel").textContent = topic.label;
+      document.getElementById("attractorTopicMeta").textContent  =
+        `${topic.n_frames} frames`;
+
+      // Position caption to the right of the node, clamped to viewport
+      const cw = 220, ch = 60;
+      let cx = sx + 24;
+      let cy = sy - ch / 2;
+      if (cx + cw > window.innerWidth  - 8) cx = sx - cw - 24;
+      if (cy < 8)                           cy = 8;
+      if (cy + ch > window.innerHeight - 8) cy = window.innerHeight - ch - 8;
+
+      captionEl.style.left = cx + "px";
+      captionEl.style.top  = cy + "px";
+      captionEl.classList.add("visible");
+      captionEl.setAttribute("aria-hidden", "false");
+    }
+
+    function _attractorHideCaption() {
+      const captionEl = document.getElementById("attractorCaption");
+      captionEl?.classList.remove("visible");
+      captionEl?.setAttribute("aria-hidden", "true");
+    }
+
+    function _attractorStep() {
+      if (!_attractorEnabled || state.level !== 1 || state.forceGraphMode || !data || !_l1GraphCtrl) {
+        stopAttractor(); return;
+      }
+      const topics = (data.topics || []).filter(t => t.topic_id >= 0)
+        .sort((a, b) => b.n_frames - a.n_frames).slice(0, 8);
+      if (!topics.length) return;
+      const topic = topics[_attractorTopicIdx % topics.length];
+      _attractorTopicIdx++;
+
+      _attractorZoomTo(topic.topic_id, 1400).then(() => {
+        if (!_attractorEnabled) { stopAttractor(); return; }
+        _attractorShowCaption(topic);
+
+        _attractorTimer = setTimeout(() => {
+          _attractorHideCaption();
+          _attractorZoomReset(900);
+          _attractorTimer = setTimeout(() => {
+            if (_attractorEnabled && state.level === 1 && !state.forceGraphMode) {
+              _attractorStep();
+            }
+          }, 1000);
+        }, 4000);
+      });
+    }
+
+    function stopAttractor() {
+      clearTimeout(_attractorTimer);
+      _attractorTimer = null;
+      clearTimeout(_idleTimer);
+      _idleTimer = null;
+      _attractorHideCaption();
+      if (_l1GraphCtrl) {
+        const { svg, zoomBehavior } = _l1GraphCtrl;
+        // interrupt() cancels any in-progress D3 transitions on this SVG.
+        // We do NOT start a new transition here: the SVG may be on the verge
+        // of being replaced by render(), and starting a fresh transition on a
+        // disconnected element triggers SVGLength errors.
+        svg.interrupt();
+        // Clear the saved zoom so the next L1 render starts at identity.
+        state.zoomTransforms.delete("topic:1::");
+      }
+    }
+
+    function resetIdleTimer() {
+      clearTimeout(_idleTimer);
+      _idleTimer = null;
+      // If attractor is currently animating, stop it on any interaction
+      if (_attractorTimer) {
+        clearTimeout(_attractorTimer);
+        _attractorTimer = null;
+        _attractorHideCaption();
+        if (_l1GraphCtrl) {
+          const { svg, zoomBehavior } = _l1GraphCtrl;
+          svg.interrupt();
+          svg.transition().duration(400).call(zoomBehavior.transform, d3.zoomIdentity);
+        }
+      }
+      // Restart the idle countdown only when on L1 in normal SVG mode
+      if (_attractorEnabled && state.level === 1 && !state.forceGraphMode) {
+        _idleTimer = setTimeout(() => {
+          _attractorTopicIdx = 0;
+          _attractorStep();
+        }, 20000); // 20 seconds of idle
+      }
+    }
+
     // 10. Search indexing (simple client-side includes-match over frame.label/main_point/subject/author_username + topic.label).
     function buildSearchIndex(data) {
       const items = [];
@@ -4062,7 +4616,6 @@
       };
 
       document.getElementById("helpButton")?.addEventListener("click", openHelp);
-      document.getElementById("tourButton")?.addEventListener("click", startTour);
       document.getElementById("helpClose")?.addEventListener("click", closeHelp);
       helpScrim?.addEventListener("click", closeHelp);
       window.addEventListener("keydown", (event) => {
@@ -4070,12 +4623,106 @@
           if (helpOverlay?.classList.contains("visible")) {
             event.preventDefault();
             closeHelp();
+          } else if (document.getElementById("storyOverlay")?.classList.contains("active")) {
+            event.preventDefault();
+            closeStory();
           } else if (document.getElementById("tourOverlay")?.classList.contains("active")) {
             event.preventDefault();
             _closeTour();
           }
         }
       });
+
+      // ── Tour dropdown ─────────────────────────────────────────────────────
+      const tourDropdownBtn = document.getElementById("tourDropdownBtn");
+      const tourMenu        = document.getElementById("tourMenu");
+
+      function openTourMenu() {
+        tourMenu?.classList.add("open");
+        tourDropdownBtn?.setAttribute("aria-expanded", "true");
+      }
+      function closeTourMenu() {
+        tourMenu?.classList.remove("open");
+        tourDropdownBtn?.setAttribute("aria-expanded", "false");
+      }
+      function toggleTourMenu() {
+        if (tourMenu?.classList.contains("open")) closeTourMenu(); else openTourMenu();
+      }
+
+      tourDropdownBtn?.addEventListener("click", (e) => { e.stopPropagation(); toggleTourMenu(); });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest("#tourDropdown")) closeTourMenu();
+      });
+
+      // Story button
+      document.getElementById("storyBtn")?.addEventListener("click", () => {
+        closeTourMenu();
+        startStory();
+      });
+
+      // Interactive tour button (startTour defined later in this scope)
+      document.getElementById("tourMenuBtn")?.addEventListener("click", () => {
+        closeTourMenu();
+        startTour();
+      });
+
+      // Demo mode toggle
+      const demoModeCheck = document.getElementById("demoModeCheck");
+      function setDemoMode(on) {
+        _attractorEnabled = on;
+        if (demoModeCheck) demoModeCheck.style.display = on ? "" : "none";
+        if (on) resetIdleTimer();
+        else    stopAttractor();
+      }
+      document.getElementById("demoModeBtn")?.addEventListener("click", () => {
+        closeTourMenu();
+        setDemoMode(!_attractorEnabled);
+      });
+
+      // Auto-enable demo mode when URL has ?demo=1
+      try {
+        if (new URLSearchParams(window.location.search).get("demo") === "1") {
+          setDemoMode(true);
+        }
+      } catch (_) {}
+
+      // Story controls
+      document.getElementById("storySkip")?.addEventListener("click", closeStory);
+      document.getElementById("storyPrev")?.addEventListener("click", () => {
+        if (_storyStep > 0) { _storyStep--; _storyShowStep(_storyStep); }
+      });
+      document.getElementById("storyNext")?.addEventListener("click", () => {
+        clearTimeout(_storyTimeout);
+        cancelAnimationFrame(_storyRafId);
+        if (_storyStep < STORY_STEPS.length - 1) { _storyStep++; _storyShowStep(_storyStep); }
+        else closeStory();
+      });
+      document.getElementById("storyPause")?.addEventListener("click", () => {
+        _storyPaused = !_storyPaused;
+        const pauseBtn = document.getElementById("storyPause");
+        const autoHint = document.getElementById("storyAutoHint");
+        if (_storyPaused) {
+          clearTimeout(_storyTimeout);
+          cancelAnimationFrame(_storyRafId);
+          const fill = document.getElementById("storyTimerFill");
+          if (fill) fill.style.transition = "none";
+          if (pauseBtn) pauseBtn.textContent = "Resume";
+          if (autoHint) autoHint.textContent = "paused";
+        } else {
+          if (pauseBtn) pauseBtn.textContent = "Pause";
+          if (autoHint) autoHint.textContent = "auto-advancing";
+          _storyShowStep(_storyStep);
+        }
+      });
+
+      // Notable findings card dismiss
+      document.getElementById("findingsClose")?.addEventListener("click", hideFindingsCard);
+
+      // Idle reset — any interaction resets the idle timer when demo mode is on
+      const _idleResetEvents = ["mousemove", "pointerdown", "keydown", "touchstart", "wheel"];
+      _idleResetEvents.forEach(evt =>
+        document.addEventListener(evt, () => { if (_attractorEnabled) resetIdleTimer(); }, { passive: true })
+      );
 
       // ── Intro tour ─────────────────────────────────────────────────────────
       // 5-step spotlight walkthrough. Auto-triggers on first visit; re-accessible
@@ -5591,6 +6238,9 @@
         simulation.on("end", persistPositions);
         setTimeout(() => simulation.alphaTarget(0), 900);
       }
+
+      // Expose controller so callers (attractor, story) can zoom the L1 graph.
+      return { svg, zoomBehavior, getNodes: () => localNodes, width, height };
     }
   </script>
 </body>

@@ -23,7 +23,7 @@
   "git": {
     "deploymentEnabled": {
       "**": false,
-      "": true
+      "main": true
     }
   }
 }
